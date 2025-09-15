@@ -1,0 +1,3824 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>MusicXML → Análise de Partições (Worker sempre ativo)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+ /* ===== Fontes ===== */
+@import url('https://fonts.googleapis.com/css2?family=Saira:wght@300;400;600;700&display=swap');
+
+/* ===== Variáveis e tema ===== */
+:root{
+  --bg:#fff; --fg:#111; --muted:#666; --line:#e8e8e8; --chip:#f4f4f4; --err:#b00020;
+  --radius:10px;
+  --content-max:1100px;
+
+  /* Alturas responsivas das visualizações */
+  --plot-h: clamp(260px, 55vh, 560px);
+  --graph-h: clamp(320px, 60vh, 680px);
+}
+
+/* Oculta a tabela bruta e a nota de limite (como no seu CSS) */
+#table, #limitNote { display: none !important; }
+
+/* ===== Base ===== */
+html { font-size: 100%; }
+body{
+  font-family: 'Saira', sans-serif;
+  margin: 0 auto;
+  padding: clamp(16px, 3vw, 24px);
+  max-width: var(--content-max);
+  color: var(--fg);
+  background: var(--bg);
+  line-height: 1.5;
+}
+
+h1 { margin: 0 0 8px; font-size: clamp(18px, 2vw, 22px); }
+h4{
+  font-size: 14px;
+  font-weight: bold;
+  margin-top: 20px;
+  margin-bottom: 5px;
+}
+
+.muted { color: var(--muted); }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+.chip { background: var(--chip); border-radius: 999px; padding: 4px 10px; display:inline-block; margin:2px 4px 2px 0; }
+
+.row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
+.row input[type="file"]{ max-width:100%; }
+
+fieldset{ border:1px solid var(--line); border-radius:8px; padding:10px 12px; }
+legend{ padding:0 6px; color:var(--muted); }
+
+#status{ margin:8px 0 4px; }
+#status.err{ color:var(--err); }
+#seq{ margin:6px 0 14px; line-height:1.7; overflow-wrap:anywhere; }
+
+/* ===== "Container" no seu padrão (caso exista no HTML) ===== */
+.container{
+  background-color:#fff;
+  font-family:'Saira', sans-serif;
+  padding:20px;
+  border-radius:10px;
+  box-shadow:0 0 10px rgba(0,0,0,.1);
+  width:100%; max-width:100%;
+  margin:0 auto;
+  align-items:center;
+  display:flex; flex-direction:column;
+}
+
+/* ===== Inputs no padrão ===== */
+input{
+  margin:5px;
+  font-family:'Saira', sans-serif;
+  padding:10px;
+  font-size:16px;
+}
+
+/* ===== Botões (padrão fornecido) ===== */
+button{
+  flex: 1 1 auto !important;
+  padding: 10px;
+  background-color: #FF6100;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: background-color .3s;
+  font-size: 2vh;         /* como no seu layout */
+  align-items: center;
+  font-weight: bold;
+  margin: 5px;
+}
+
+/* Hover/selected */
+button:hover,
+button.selected { background-color:#000; }
+
+/* Foco acessível */
+button:focus-visible{ outline:2px solid #000; outline-offset:2px; }
+
+/* ===== Layout dos BOTÕES DE CONTROLE (os quatro de visualização) ===== */
+/* Mantemos três colunas no desktop, usando os IDs já existentes */
+#btnDN, #btnDNChart, #btnIndexograma, #btnGraphPartitions{
+  max-width: calc(33.333% - 10px);
+}
+
+/* Quebra para 2 colunas em telas médias */
+@media (max-width: 900px){
+#btnDN, #btnDNChart, #btnIndexograma, #btnGraphPartitions, #btnTexturalClasses, #btnTransforms{
+  max-width: calc(50% - 10px);
+}
+}
+
+/* 1 coluna no mobile estreito */
+@media (max-width: 520px){
+  #btnDN, #btnDNChart, #btnIndexograma, #btnGraphPartitions, #btnTexturalClasses, #btnTransforms{
+    max-width: 100%;
+  }
+}
+
+/* ===== Botões auxiliares (exportar/download) mantêm tamanho natural ===== */
+#exportCsv, #dlGraphPNG, #dlGraphSVG{
+  flex: 0 0 auto !important;
+  font-size: clamp(.9rem, 1.8vw, 1rem);
+  padding: .6rem .9rem;
+}
+
+/* ===== Tabela responsiva ===== */
+table{ width:100%; border-collapse:collapse; margin-top:8px; }
+th, td{ border:1px solid var(--line); padding:.55rem .6rem; font-size:.95rem; }
+th{ background:#fbfbfb; text-align:left; position:sticky; top:0; }
+
+/* O dock permite rolagem horizontal se necessário (tabelas largas) */
+#vizDock{ margin-top:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+#vizDock table{ width:max(720px, 100%); }
+
+/* ===== Visualizações responsivas (Plotly/Cytoscape) ===== */
+#dnChart,
+#indexogramaContainer{
+  height: var(--plot-h) !important;
+  width: 100% !important;
+  border:1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+#cy{
+  height: var(--graph-h) !important;
+  width: 100% !important;
+  border:1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+/* Conteúdo interno das vis: nunca estourar o container */
+#vizDock canvas,
+#vizDock svg,
+#vizDock .main-svg{ max-width:100%; height:auto; }
+
+/* Barra de ações do grafo (download) */
+#downloadButtons{
+  display:flex; flex-wrap:wrap; gap:10px; margin-top:8px;
+}
+
+
+/* ===== Acessibilidade: reduzir movimento ===== */
+@media (prefers-reduced-motion: reduce){
+  *{ scroll-behavior:auto !important; transition:none !important; animation:none !important; }
+}
+
+/* === Ajustes de texto no mobile === */
+html { -webkit-text-size-adjust: 100%; } /* iOS Safari: não aumentar fonte sozinho */
+
+/* Botões: substitui o 2vh por clamp e habilita quebras */
+button{
+  font-size: clamp(12px, 2.6vw, 16px);  /* estava 2vh */
+  line-height: 1.2;
+  padding: .6rem .8rem;
+  white-space: normal;          /* pode quebrar linha */
+  overflow-wrap: anywhere;      /* quebra palavras compridas se precisar */
+  hyphens: auto;                /* hifenização (lang="pt-BR" já ajuda) */
+}
+
+/* Mobile estreito: 100% de largura e fonte legível */
+@media (max-width: 520px){
+  .row { gap: 8px; }
+  #btnDN, #btnDNChart, #btnIndexograma, #btnGraphPartitions,
+  #btnTexturalClasses, #btnTransforms,
+  #btnHistRec, #btnHistTempo, #btnClassCircle,
+  #btnMarkovPartitions, #btnClassBigrams, #btnTrigramHist, #btnTexturalContour{
+    max-width: 100%;
+  }
+  button{
+    font-size: 14px;            /* trava um mínimo confortável no celular */
+    padding: .55rem .7rem;
+  }
+}
+
+/* (Opcional) Telefones bem estreitos */
+@media (max-width: 360px){
+  button{ font-size: 13px; }
+}
+
+/* 3 colunas no desktop */
+#btnDN, #btnDNChart, #btnIndexograma, #btnGraphPartitions, #btnParticiograma{
+  max-width: calc(33.333% - 10px);
+}
+
+/* 2 colunas em telas médias */
+@media (max-width: 900px){
+#btnDN, #btnDNChart, #btnIndexograma, #btnGraphPartitions, #btnParticiograma,
+#btnTexturalClasses, #btnTransforms{
+  max-width: calc(50% - 10px);
+}
+}
+
+/* 1 coluna no mobile estreito */
+@media (max-width: 520px){
+  #btnDN, #btnDNChart, #btnIndexograma, #btnGraphPartitions, #btnParticiograma,
+  #btnTexturalClasses, #btnTransforms,
+  #btnHistRec, #btnHistTempo, #btnClassCircle,
+  #btnMarkovPartitions, #btnClassBigrams, #btnTrigramHist, #btnTexturalContour{
+    max-width: 100%;
+  }
+}
+
+/* Gráfico de Registro: mesmas larguras dos outros botões */
+#btnRegisterGraph{ max-width: calc(33.333% - 10px); }
+@media (max-width: 900px){
+  #btnRegisterGraph{ max-width: calc(50% - 10px); }
+}
+@media (max-width: 520px){
+  #btnRegisterGraph{ max-width: 100%; }
+}
+
+#btnDensityCompression{ max-width: calc(33.333% - 10px); }
+@media (max-width: 900px){
+  #btnDensityCompression{ max-width: calc(50% - 10px); }
+}
+@media (max-width: 520px){
+  #btnDensityCompression{ max-width: 100%; }
+}
+
+/* 3 colunas no desktop */
+#btnPitchSpace{ max-width: calc(33.333% - 10px); }
+/* 2 colunas em telas médias */
+@media (max-width: 900px){ #btnPitchSpace{ max-width: calc(50% - 10px); } }
+/* 1 coluna no mobile estreito */
+@media (max-width: 520px){ #btnPitchSpace{ max-width: 100%; } }
+
+  </style>
+
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<script src="https://unpkg.com/cytoscape@3.28.1/dist/cytoscape.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.8.8/build/opensheetmusicdisplay.min.js"></script>
+
+
+ 
+</head>
+<body>
+
+  <div class="row">
+    <input type="file" id="fileInput" accept=".xml,.musicxml" />
+    <span id="fileInfo" class="muted"></span>
+  </div>
+
+  <fieldset>
+    <legend>Opções</legend>
+    <div class="row">
+      <label><input type="checkbox" id="onlyChanges" checked /> Sequência sem repetições</label>
+<label><input type="checkbox" id="stepLines" checked /> Gráfico Escada</label>
+<label><input type="checkbox" id="countUnisonsSeparately" checked />
+  Contar uníssonos separadamente
+</label>
+<label><input type="checkbox" id="useArticulations" /> Diferenciar as articulações</label>
+
+
+<button id="exportCsv" disabled>Exportar Tabela XLS</button>
+<button id="btnDownloadAnnotated" disabled>Baixar XML anotado</button>
+
+    </div>
+  </fieldset>
+
+  <div id="status" class="muted"></div>
+  <div id="seq" class="mono"></div>
+
+<fieldset>
+    <legend>Ferramentas</legend>
+    <div class="row">
+
+  <!-- Controles -->
+  <div class="row" style="margin-top:8px">
+    <button id="btnDN">Tabela DN</button>
+    <button id="btnDNChart">Gráfico DN</button>
+    <button id="btnIndexograma">Indexograma</button>
+    <button id="btnParticiograma">Particiograma</button>
+    <button id="btnGraphPartitions">Grafo de Partições</button>
+    <button id="btnRegisterGraph">Gráfico de Registro</button>
+    <button id="btnPitchSpace">Espaço de Alturas</button>
+    <button id="btnDensityCompression">Densidade-Compressão</button>
+    <button id="btnHistRec">Histograma Recorrências</button>
+    <button id="btnHistTempo">Histograma (Tempo)</button>
+    <button id="btnTexturalClasses">Gráfico Classes Texturais</button>
+    <button id="btnTransforms">Gráfico de Transformações</button>
+    <button id="btnClassCircle">Mapa Classes (circular)</button>
+    <button id="btnMarkovPartitions">Tabela Markov (partições)</button>
+    <button id="btnClassBigrams">Grafo Bigramas (classes)</button>
+    <button id="btnTrigramHist">Histograma Trigramas (classes)</button>
+    <button id="btnTexturalContour">Contorno Textural</button>
+    <button id="btnParsimony">Gráfico Parcimônia</button>
+
+  
+    </div>
+  </fieldset>
+  
+
+  <!-- Um único container para tudo -->
+  <div id="vizDock" style="margin-top:8px;"></div>
+
+<script>
+(() => {
+  "use strict";
+
+// ======= Config =======
+let TICKS_PER_QUARTER = 1920; // será recalculado por arquivo
+
+function gcd(a,b){ while(b){ const t=a%b; a=b; b=t; } return Math.abs(a); }
+function lcm(a,b){ return Math.abs(a / gcd(a,b) * b); }
+
+function computeGlobalTPQ(xmlDoc){
+  // Varre TODAS as partes/compassos e pega o LCM de todas as <divisions>
+  const parts = Array.from(xmlDoc.querySelectorAll("score-partwise > part"));
+  if (!parts.length) return 480; // fallback
+  let tpq = 1;
+  for (const part of parts){
+    const measures = Array.from(part.querySelectorAll(":scope > measure"));
+    let cur = 1;
+    for (const m of measures){
+      const d = Number(m.querySelector(":scope > attributes > divisions")?.textContent || cur);
+      cur = d || cur;
+      tpq = lcm(tpq, cur);
+    }
+  }
+  return tpq; // *** sem Math.max(480, tpq) ***
+}
+
+// helpers passam a usar o TPQ calculado
+const toTicks = (quarters) => Math.round(quarters * TICKS_PER_QUARTER);
+const ticksToBeats = (ticks) => ticks / TICKS_PER_QUARTER;
+
+  // ======= Estado =======
+  let lastRows = [];
+  let measureStartsTicks = [];
+  let measureEndsTicks = [];
+  let onlyChangesEl, limitRowsEl, maxRowsEl, exportBtn, statusEl, stepLinesEl;
+  let countUnisonsEl;
+  let worker = null;
+  let __xmlDocOrig = null;
+  let __xmlOrigName = 'arquivo';
+
+
+  // ======= Utils =======
+
+// ==== Parcimônia: parâmetros da similaridade exponencial ====
+// Calibração: 1 passo => 0.95
+const SIM_LAMBDA = -Math.log(0.95);   // ≈ 0.051293
+// Curvatura (γ>1 cai mais rápido em trajetos longos):
+const SIM_GAMMA  = 1.7;
+
+// Canônica (ordenada crescente, sem zeros)
+function canonPart(part){
+  return part.filter(x => x>0).slice().sort((a,b)=>a-b);
+}
+function partStr(part){ return JSON.stringify(canonPart(part)); }
+function sumArr(a){ return a.reduce((s,v)=>s+v,0); }
+
+// Gera vizinhos com custo 1 segundo as regras: Y, D, S₁, G₁
+function neighborsYDSG1(part){
+  const p = canonPart(part);
+  const out = new Set();
+  const push = q => out.add(partStr(q));
+
+  const n = p.length;
+  const c1 = p.filter(x=>x===1).length;
+
+  // +D / -D
+  for (let i=0;i<n;i++){
+    // +D em p[i]
+    { const q = p.slice(); q[i] = q[i]+1; push(q); }
+    // -D se >=2
+    if (p[i] >= 2){ const q = p.slice(); q[i] = q[i]-1; push(q); }
+  }
+
+  // +Y
+  { const q = p.slice(); q.push(1); push(q); }
+
+  // -Y (se houver 1)
+  if (c1 > 0){
+    // remove um único "1"
+    let removed = false;
+    const q = [];
+    for (const v of p){
+      if (!removed && v===1){ removed = true; continue; }
+      q.push(v);
+    }
+    push(q);
+  }
+
+  // S₁: x -> (1, x-1) (para todo x>=2)
+  for (let i=0;i<n;i++){
+    const x = p[i];
+    if (x >= 2){
+      const q = p.slice(); q.splice(i,1); q.push(1, x-1); push(q);
+    }
+  }
+
+  // G₁: (1,a) -> (a+1)
+  if (c1 > 0){
+    // caso (1,1) -> 2
+    if (c1 >= 2){
+      // remove dois 1 e adiciona 2
+      let r = 2;
+      let c1left = 2;
+      const q = [];
+      for (const v of p){
+        if (c1left && v===1){ c1left--; continue; }
+        q.push(v);
+      }
+      q.push(r); push(q);
+    }
+    // caso (1,a>=1) -> a+1
+    // escolhe um "a" (que pode ser outro 1, o caso acima já cobriu; não faz mal repetir)
+    for (let j=0;j<n;j++){
+      const a = p[j];
+      // remove UM 1 (o "doado") e incrementa p[j]
+      let oneRemoved = false;
+      const q = [];
+      for (let k=0;k<n;k++){
+        if (!oneRemoved && p[k]===1){ oneRemoved = true; continue; } // remove 1
+        q.push(p[k]);
+      }
+      // agora incrementa o "a" original
+      // (se j estava após o 1 removido, o índice muda; por isso fazemos assim:)
+      q.push(a+1);
+      push(q);
+    }
+  }
+  return Array.from(out).map(JSON.parse);
+}
+
+// Limites suaves para não explodir o espaço (seguros p/ música)
+function keepReasonable(q, sumA, sumB, depth, maxDepth){
+  const s = sumArr(q);
+  // não deixar o somatório fugir demais do intervalo alvo
+  const slack = (maxDepth - depth) + 4; // folga dinâmica
+  const lo = Math.max(1, Math.min(sumA, sumB) - slack);
+  const hi = Math.max(sumA, sumB) + slack;
+  if (s < lo || s > hi) return false;
+  // tamanho também razoável
+  const maxLen = Math.max(1, q.length);
+  if (maxLen > 64) return false;
+  return true;
+}
+
+// BFS mínimo com Y, D, S₁, G₁
+// Retorna d_min (inteiro). Se atingir limite, devolve limite+1 (melhor que travar).
+const __dminCache = new Map();
+function dmin_YDSG1(A, B, maxDepth=24){
+  const a = canonPart(A), b = canonPart(B);
+  const key = partStr(a) + '→' + partStr(b);
+  if (__dminCache.has(key)) return __dminCache.get(key);
+  if (partStr(a) === partStr(b)) return 0;
+
+  const sumA = sumArr(a), sumB = sumArr(b);
+
+  // fronteira BFS
+  let frontier = new Set([partStr(a)]);
+  const seen = new Set(frontier);
+
+  for (let d=1; d<=maxDepth; d++){
+    const next = new Set();
+    for (const s of frontier){
+      const cur = JSON.parse(s);
+      for (const nb of neighborsYDSG1(cur)){
+        if (!keepReasonable(nb, sumA, sumB, d, maxDepth)) continue;
+        const nbKey = partStr(nb);
+        if (seen.has(nbKey)) continue;
+        if (nbKey === partStr(b)){ __dminCache.set(key, d); return d; }
+        seen.add(nbKey);
+        next.add(nbKey);
+      }
+    }
+    frontier = next;
+    if (!frontier.size) break;
+  }
+  // não achou dentro do limite — devolve um valor grande
+  const fallback = maxDepth + 1;
+  __dminCache.set(key, fallback);
+  return fallback;
+}
+
+// Similaridade exponencial (queda acelerada)
+function Sexp_from_d(d){
+  return Math.exp(-SIM_LAMBDA * Math.pow(d, SIM_GAMMA));
+}
+
+  const fmt2 = (x) => (Math.round(x * 100) / 100).toFixed(2);
+  
+  const setStatus = (msg, isErr=false) => {
+    statusEl.textContent = msg || "";
+    statusEl.className = isErr ? "err" : "muted";
+  };
+// substitui o helper antigo
+const download = (filename, data, mime = 'application/octet-stream') => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([data], { type: mime + ';charset=utf-8' }));
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+};
+
+
+  // Combinação nC2
+  function comb(n, k) {
+    if (k > n) return 0;
+    if (k === 0 || k === n) return 1;
+    let res = 1;
+    for (let i=0;i<k;i++){ res *= (n-i); res /= (i+1); }
+    return res;
+  }
+
+  // DN = (dispersão, aglomeração)
+  function calcDispersaoAglomeracao(partition) {
+    const p = partition.filter(x => x > 0);
+    const sum = p.reduce((a,b)=>a+b,0);
+    const total = comb(sum,2);
+    const ag = p.reduce((s,n)=> s + comb(n,2), 0);
+    const di = total - ag;
+    return { dispersao: di, aglomeracao: ag, simult: sum };
+  }
+
+  // ======= Formatação das partições (regra: sem vírgula após termo com expoente) =======
+  // Plain (ex.: "[1^23^2]")
+  function formatPartitionPlain(partition) {
+    const counts = new Map();
+    partition.forEach(v => counts.set(v, (counts.get(v) || 0) + 1));
+    const ordered = Array.from(counts.keys()).sort((a, b) => a - b);
+
+    let out = '[';
+    let prevHadExp = false;
+    ordered.forEach((v, i) => {
+      const c = counts.get(v);
+      if (i > 0 && !prevHadExp) out += ',';  // vírgula só se o anterior NÃO tinha expoente
+      out += String(v);
+      if (c > 1) { out += '^' + String(c); prevHadExp = true; }
+      else { prevHadExp = false; }
+    });
+    out += ']';
+    return out;
+  }
+
+  // HTML (ex.: "[1<sup>2</sup>3]") – mesma regra
+  function formatPartition(partition) {
+    const counts = new Map();
+    partition.forEach(v => counts.set(v, (counts.get(v) || 0) + 1));
+    const ordered = Array.from(counts.keys()).sort((a, b) => a - b);
+
+    let out = '[';
+    let prevHadExp = false;
+    ordered.forEach((v, i) => {
+      const c = counts.get(v);
+      if (i > 0 && !prevHadExp) out += ',';
+      out += String(v);
+      if (c > 1) { out += `<sup>${c}</sup>`; prevHadExp = true; }
+      else { prevHadExp = false; }
+    });
+    out += ']';
+    return out;
+  }
+
+  // Converte "[1<sup>2</sup>3]" → "1²3" (sem colchetes) p/ labels do grafo
+  function normalizePartitionLabel(html) {
+    if (!html) return '';
+    let txt = html.replace(/^\s*\[|\]\s*$/g, '');
+    const SUPER = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹'};
+    txt = txt.replace(/<sup>(\d+)<\/sup>/gi, (_,d)=> d.split('').map(x=>SUPER[x]??x).join(''));
+    txt = txt.replace(/\^(\d+)/g, (_,d)=> d.split('').map(x=>SUPER[x]??x).join(''));
+    txt = txt.replace(/<\/?[^>]+(>|$)/g, '');
+    return txt.trim();
+  }
+
+// Ordem fixa (de baixo pra cima no eixo Y)
+const CLASSES_ORDER = [
+  'Pausa', '[L]', '[B]', '[Lˣ]', '[LB]', '[Bʸ]', '[LˣB]', '[LBʸ]', '[LˣBʸ]'
+];
+
+
+// Estados distintos (sem repetições laterais), mantendo o tempo t
+function getDistinctStates() {
+  const out = [];
+  let lastSig = null;
+  for (const r of lastRows) {
+    const sig = JSON.stringify(r.partition);
+    if (sig !== lastSig) {
+      out.push({ t: r.t, part: r.partition.slice() });
+      lastSig = sig;
+    }
+  }
+  return out;
+}
+
+// Ordem fixa no eixo Y (de baixo pra cima)
+const TRANSF_ORDER = ['-D', '+D', '-Y', '+Y', 'G', 'S'];
+
+// multiconjuntos
+function msCounts(arr){ const m=new Map(); for(const v of arr) m.set(v,(m.get(v)||0)+1); return m; }
+function msIsSubset(a,b){ // a ⊆ b ?
+  const A=msCounts(a), B=msCounts(b);
+  for(const [k,c] of A){ if((B.get(k)||0) < c) return false; }
+  return true;
+}
+function sum(arr){ return arr.reduce((a,b)=>a+b,0); }
+
+// Verifica se é possível AGRUPAR A em B (soma preservada) – G
+function canMergeTo(A, B){
+  const sA = sum(A), sB = sum(B);
+  if (sA !== sB) return false;
+  if (B.length > A.length) return false;
+  const a = A.slice().sort((x,y)=>y-x);
+  const targets = B.slice().sort((x,y)=>y-x);
+  const used = new Array(a.length).fill(false);
+
+  function fillTarget(i){ // i = índice do alvo em targets
+    if (i === targets.length) {
+      // todos os elementos de A precisam ter sido usados
+      for (let k=0;k<a.length;k++) if (!used[k]) return false;
+      return true;
+    }
+    const T = targets[i];
+
+    function search(rem, start){
+      if (rem === 0) return fillTarget(i+1);
+      for (let j=start; j<a.length; j++){
+        if (used[j]) continue;
+        const v = a[j];
+        if (v > rem) continue;
+        used[j] = true;
+        if (search(rem - v, j+1)) return true;
+        used[j] = false;
+        while (j+1<a.length && a[j+1]===v) j++; // pular duplicatas
+      }
+      return false;
+    }
+    return search(T, 0);
+  }
+  return fillTarget(0);
+}
+
+// S é o inverso de G: A -> B via S  ⇔  B -> A via G
+function canSplitTo(A, B){ return canMergeTo(B, A); }
+
+// Inferir o conjunto mínimo de transformações entre partições A -> B
+function inferTransformSet(A, B){
+  const lenA = A.length, lenB = B.length;
+  const sumA = sum(A),   sumB = sum(B);
+
+  // casos diretos
+  if (lenA === lenB && sumA < sumB) return ['+D'];
+  if (lenA === lenB && sumA > sumB) return ['-D'];
+
+  if (msIsSubset(A, B) && lenB > lenA) return ['+Y']; // só acrescentou números
+  if (msIsSubset(B, A) && lenB < lenA) return ['-Y']; // só removeu números
+
+  if (sumA === sumB){
+    if (lenB < lenA && canMergeTo(A, B)) return ['G'];
+    if (lenB > lenA && canSplitTo(A, B)) return ['S'];
+    if (lenB === lenA) return ['-D', '+D']; // redistribuição pura
+  }
+
+  // combinações mínimas (2 no máx.): sinal do somatório + variação de cardinalidade
+  const set = [];
+  if (sumB > sumA) set.push('+D');
+  else if (sumB < sumA) set.push('-D');
+
+  if (lenB > lenA) set.push(msIsSubset(A,B) ? '+Y' : 'S');   // prefere +Y se possível
+  else if (lenB < lenA) set.push(msIsSubset(B,A) ? '-Y' : 'G');
+
+  // fallback: se nada entrou, assume redistribuição mista
+  return set.length ? set.slice(0,2) : ['-D', '+D'];
+}
+
+// Classifica partição em classes texturais
+function classifyPartition(part) {
+  if (!part || part.length === 0) return 'Pausa';
+  let cL = 0, cB = 0;
+  for (const v of part) { if (v === 1) cL++; else if (v >= 2) cB++; }
+  if (cL > 0 && cB === 0) return (cL === 1) ? '[L]' : '[Lˣ]';
+  if (cL === 0 && cB > 0) return (cB === 1) ? '[B]' : '[Bʸ]';
+  if (cL > 0 && cB > 0) {
+    if (cL === 1 && cB === 1) return '[LB]';
+    if (cL > 1 && cB === 1)  return '[LˣB]';
+    if (cL === 1 && cB > 1)  return '[LBʸ]';
+    return '[LˣBʸ]';
+  }
+  return 'Pausa';
+}
+
+
+// Sequência de CLASSES sem repetições laterais
+function getClassSeqDistinct() {
+  const seq = [];
+  let last = null;
+  for (const r of lastRows) {
+    const c = classifyPartition(r.partition);
+    if (c !== last) { seq.push(c); last = c; }
+  }
+  return seq;
+}
+
+// === util: assinatura única da partição ===
+function partKey(part){ return JSON.stringify(part); }
+
+// === contorno textural (níveis 0..n-1) ===
+// Dentro de cada soma s: ordenar por dispersão crescente (maior dispersão = mais complexo).
+// Entre somas: empata o 1º de s com o último nível anterior **apenas** se o uníssono [s] estiver presente.
+// Isso garante [3] ≡ [1^2], mas NÃO empata [1,3] com [3] quando [4] não aparece.
+function computeTexturalContourLevels(){
+  if (!lastRows.length) return { levels:new Map(), legend:[], maxLevel:-1 };
+
+  // 1) partições distintas observadas
+  const uniq = new Map(); // key -> part[]
+  for (const r of lastRows){
+    const k = JSON.stringify(r.partition);
+    if (!uniq.has(k)) uniq.set(k, r.partition.slice());
+  }
+
+  // 2) agrupar por soma e calcular dispersão
+  const byS = new Map(); // s -> [{key, part, di}]
+  uniq.forEach((part, key) => {
+    const s  = part.reduce((a,b)=>a+b,0);
+    const di = calcDispersaoAglomeracao(part).dispersao;
+    if (!byS.has(s)) byS.set(s, []);
+    byS.get(s).push({ key, part, di, s });
+  });
+
+  // 3) ordenar: s asc; dentro de s por dispersão asc
+  const sVals = Array.from(byS.keys()).sort((a,b)=>a-b);
+  sVals.forEach(s => byS.get(s).sort((a,b)=> a.di - b.di));
+
+  const levels = new Map(); // key -> nível
+  const legend = [];
+  let cursor = 0;           // próximo nível livre
+  let hasPrevious = false;
+
+  for (const s of sVals){
+    const arr = byS.get(s);
+    if (!arr.length) continue;
+
+    // há uníssono [s] presente neste grupo?
+    const hasUnison = arr.some(x => x.part.length === 1 && x.part[0] === s);
+
+    // nível inicial: empata só se tiver grupo anterior E o uníssono existir
+    let startLevel = cursor;
+    if (s >= 3 && hasPrevious && hasUnison) {
+      startLevel = Math.max(0, cursor - 1); // empata com o último nível anterior
+    }
+
+    // atribuir níveis sequenciais dentro de s (por dispersão)
+    for (let i = 0; i < arr.length; i++){
+      const L = startLevel + i;
+      levels.set(arr[i].key, L);
+      legend.push({ level:L, part:arr[i].part.slice(), s, di:arr[i].di });
+    }
+
+    cursor = startLevel + arr.length;
+    hasPrevious = true;
+  }
+
+  legend.sort((a,b)=> a.level - b.level || a.di - b.di);
+  const maxLevel = legend.length ? legend[legend.length - 1].level : -1;
+
+  return { levels, legend, maxLevel };
+}
+
+
+// === gráfico do contorno textural ===
+function showTexturalContour(){
+  const dock = clearDock();
+
+  // legenda compacta de níveis (chips)
+  const legendDiv = document.createElement('div');
+  legendDiv.className = 'mono';
+  legendDiv.style.margin = '4px 0 8px';
+  dock.appendChild(legendDiv);
+
+  const box = freshDiv(dock, 420);
+
+  if (!lastRows.length){
+    box.innerHTML = '<div class="muted">Sem dados.</div>';
+    legendDiv.remove();
+    return;
+  }
+
+  const { levels, legend, maxLevel } = computeTexturalContourLevels();
+  if (maxLevel < 0){
+    box.innerHTML = '<div class="muted">Sem dados.</div>';
+    legendDiv.remove();
+    return;
+  }
+
+  // legenda: #nível [partição]
+  legendDiv.innerHTML =
+    '<strong>Níveis:</strong> ' +
+    legend.map(e => `<span class="chip">#${e.level} ${formatPartition(e.part)}</span>`).join(' ');
+
+  // série temporal dos níveis
+  const straight = document.getElementById('stepLines')?.checked;
+  const x = lastRows.map(r => ticksToBeats(r.t));
+  const y = lastRows.map(r => levels.get(partKey(r.partition)));
+
+  const totalMeasures = measureStartsTicks.length;
+  const xTickvalsAll = measureStartsTicks.map(t => ticksToBeats(t));
+  const tickStep = totalMeasures <= 50 ? 1 : (totalMeasures <= 100 ? 5 : 10);
+  const xTickvals = xTickvalsAll.filter((_, i) => (i % tickStep) === 0);
+  const xTicktext = xTickvals.map((_, i) => String(i * tickStep + 1));
+
+  const hover = lastRows.map(r =>
+    `Nível: ${levels.get(partKey(r.partition))}<br>Partição: ${formatPartitionPlain(r.partition)}`
+  );
+
+  const trace = {
+    x, y,
+    type: 'scatter',
+    mode: 'lines+markers',
+    line: { shape: straight ? 'hv' : 'linear' },
+    hoverinfo: 'text',
+    hovertext: hover
+  };
+
+  const layout = {
+    title: 'Contorno Textural (níveis 0 … n-1)',
+    xaxis: { title:'Compassos (tempo)', tickmode:'array', tickvals:xTickvals, ticktext:xTicktext,
+             showgrid:true, showline:true, mirror:true, linecolor:'black' },
+    yaxis: { title:'Nível de complexidade', tickmode:'linear', dtick:1,
+             range: [-0.5, maxLevel + 0.5], showgrid:true, showline:true, mirror:true, linecolor:'black' },
+    margin:{ t:50, l:60, r:30, b:50 },
+    showlegend:false
+  };
+
+  Plotly.newPlot(box, [trace], layout, {
+    responsive:true, displaylogo:false,
+    modeBarButtonsToAdd: [
+      { name:'Download PNG',  icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'png',  filename:'contorno_textural_png'}) },
+      { name:'Download SVG',  icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'svg',  filename:'contorno_textural_svg'}) },
+      { name:'Download JPEG', icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'jpeg', filename:'contorno_textural_jpeg'}) },
+      { name:'Download PDF',  icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'pdf',  filename:'contorno_textural_pdf'}) }
+    ]
+  }).then(() => setTimeout(() => Plotly.Plots.resize(box), 0));
+}
+
+// Sequência de PARTIÇÕES (labels) sem repetições laterais
+function getPartitionSeqDistinctLabels() {
+  const seq = [];
+  let last = null;
+  for (const r of lastRows) {
+    const lbl = formatPartition(r.partition); // => "[1<sup>3</sup>]" etc. (HTML)
+    if (lbl !== last) { seq.push(lbl); last = lbl; }
+  }
+  return seq;
+}
+
+
+// --- contadores de bigramas/trigramas (classes, sem 'Pausa') ---
+function countBigrams(classSeq) {
+  const ALLOWED = new Set(['[LB]','[B]','[Bʸ]','[LBʸ]','[LˣBʸ]','[LˣB]','[Lˣ]','[L]']);
+  const m = new Map();
+  for (let i = 0; i < classSeq.length - 1; i++) {
+    const a = classSeq[i], b = classSeq[i+1];
+    if (a === b) continue;
+    if (!ALLOWED.has(a) || !ALLOWED.has(b)) continue;
+    const k = `${a}->${b}`;
+    m.set(k, (m.get(k) || 0) + 1);
+  }
+  return m;
+}
+
+function countTrigrams(classSeq) {
+  const ALLOWED = new Set(['[LB]','[B]','[Bʸ]','[LBʸ]','[LˣBʸ]','[LˣB]','[Lˣ]','[L]']);
+  const m = new Map();
+  for (let i = 0; i < classSeq.length - 2; i++) {
+    const a = classSeq[i], b = classSeq[i+1], c = classSeq[i+2];
+    if (a === b && b === c) continue;
+    if (!ALLOWED.has(a) || !ALLOWED.has(b) || !ALLOWED.has(c)) continue;
+    const k = `${a}->${b}->${c}`;
+    m.set(k, (m.get(k) || 0) + 1);
+  }
+  return m;
+}
+
+// --- Grafo de Bigramas (classes) ---
+function showClassBigrams() {
+  const dock = clearDock();
+  const cyBox = freshDiv(dock, 560);
+  const btnBox = document.createElement('div');
+  dock.appendChild(btnBox);
+
+  // ordem e ângulos no "relógio"
+  const CLASS_ORDER = ['[LB]','[B]','[Bʸ]','[LBʸ]','[LˣBʸ]','[LˣB]','[Lˣ]','[L]'];
+  const CLASS_ANGLE = { '[LB]':90,'[B]':45,'[Bʸ]':0,'[LBʸ]':315,'[LˣBʸ]':270,'[LˣB]':225,'[Lˣ]':180,'[L]':135 };
+
+  const w = cyBox.clientWidth || 720;
+  const h = cyBox.clientHeight || 560;
+  const cx = w/2, cy = h/2;
+  const R  = Math.min(w,h) * 0.36;
+  const Rlbl = R + 26;
+  const toPos = (deg, r) => {
+    const t = (deg*Math.PI)/180;
+    return { x: cx + r*Math.cos(t), y: cy - r*Math.sin(t) };
+  };
+
+  // sequência de classes (sem repetições laterais)
+  const classesSeq = getClassSeqDistinct();
+
+  // nós: círculo + pinos + labels
+  const nodes = [{
+    data:{ id:'__circle__' }, position:{ x:cx, y:cy }, selectable:false, grabbable:false, locked:true
+  }];
+  for (const c of CLASS_ORDER) {
+    nodes.push(
+      { data:{ id:`pin_${c}`,  kind:'pin',   label:c }, position:toPos(CLASS_ANGLE[c], R),   selectable:false, grabbable:false, locked:true },
+      { data:{ id:`lbl_${c}`,  kind:'label', label:c }, position:toPos(CLASS_ANGLE[c], Rlbl),selectable:false, grabbable:false, locked:true },
+    );
+  }
+
+  // destacar origem (primeira classe válida)
+  const firstClass = classesSeq.find(c => CLASS_ORDER.includes(c));
+  if (firstClass) {
+    nodes.push({ data:{ id:`start_${firstClass}`, kind:'start' }, position:toPos(CLASS_ANGLE[firstClass], R), selectable:false, grabbable:false, locked:true });
+  }
+
+  // arestas: somente bigramas existentes
+  const big = countBigrams(classesSeq);
+  const edges = [];
+  let ei = 0;
+  big.forEach((n, k) => {
+    const [a,b] = k.split('->');
+    edges.push({ data:{ id:`e${ei++}`, source:`pin_${a}`, target:`pin_${b}`, w:n, label:`${n}` } });
+  });
+
+  // desenha com Cytoscape
+  if (window.cy) { try { window.cy.destroy(); } catch(_) {} }
+  const cyGraph = cytoscape({
+    container: cyBox,
+    elements: [...nodes, ...edges],
+    layout: { name:'preset' },
+    style: [
+      { selector: 'node#__circle__', style: { shape:'ellipse', width: Math.min(w,h)*0.78, height: Math.min(w,h)*0.78, 'background-opacity':0, 'border-width':2, 'border-color':'#bbb' } },
+      { selector: 'node[kind = "pin"]',   style: { shape:'ellipse', width:10, height:10, 'background-color':'#111', 'border-width':0, label:'' } },
+      { selector: 'node[kind = "label"]', style: { 'background-opacity':0, 'border-width':0, label:'data(label)', 'font-weight':700, color:'#111', 'text-valign':'center', 'text-halign':'center', 'font-size':'12px' } },
+      { selector: 'node[kind = "start"]', style: { shape:'ellipse', width:16, height:16, 'background-color':'#FF6100', 'border-width':0 } },
+      { selector: 'edge',
+        style: {
+          'curve-style':'straight',
+          'line-color':'#FF6100',
+          'target-arrow-shape':'triangle',
+          'target-arrow-color':'#FF6100',
+          'width':'mapData(w, 1, 10, 2, 10)',    // 1→2px … 10+→10px
+          'opacity':0.95,
+          'label':'data(w)',
+          'font-size':'10px',
+          'color':'#333',
+          'text-background-color':'blackf',
+          'text-background-opacity':0.8
+        }
+      }
+    ]
+  });
+  window.cy = cyGraph;
+  setTimeout(() => { cyGraph.resize(); cyGraph.fit(); }, 0);
+
+  // botões de download
+  btnBox.innerHTML = '';
+  const btnPng = document.createElement('button');
+  btnPng.textContent = 'Baixar grafo (PNG)';
+  btnPng.onclick = () => {
+    const png64 = cyGraph.png({ full:true });
+    const a = document.createElement('a');
+    a.href = png64; a.download = `bigrama_classes_${new Date().toISOString().slice(0,10)}.png`; a.click();
+  };
+  const btnSvg = document.createElement('button');
+  btnSvg.textContent = 'Baixar grafo (SVG)';
+  btnSvg.onclick = () => {
+    if (!cyGraph.svg) { alert('Para exportar SVG, inclua o plugin cytoscape-svg.'); return; }
+    const svgText = cyGraph.svg({ full:true });
+    const blob = new Blob([svgText], {type:'image/svg+xml;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `bigrama_classes_${new Date().toISOString().slice(0,10)}.svg`; a.click();
+    URL.revokeObjectURL(url);
+  };
+  btnBox.style.display = 'flex';
+  btnBox.style.gap = '8px';
+  btnBox.appendChild(btnPng);
+  btnBox.appendChild(btnSvg);
+}
+
+// --- Histograma de Trigramas (classes) ---
+function showTrigramHist() {
+  const dock = clearDock();
+  const box = freshDiv(dock, 420);
+
+  const classesSeq = getClassSeqDistinct();
+  const tri = countTrigrams(classesSeq); // Map "A->B->C" -> contagem
+  if (tri.size === 0) { box.innerHTML = '<div class="muted">Sem trigramas suficientes.</div>'; return; }
+
+  const TOP_N = 20;
+  const entries = Array.from(tri.entries()).sort((a,b)=> b[1]-a[1]).slice(0, TOP_N);
+
+  const x = entries.map(([k]) => k.replaceAll('->',' → '));
+  const y = entries.map(([,v]) => v);
+  const trace = { type:'bar', x, y, text: y.map(String), textposition:'auto' };
+
+  const layout = {
+    title: `Top ${TOP_N} Trigramas (classes texturais)`,
+    xaxis: { title:'Trigrama', automargin:true },
+    yaxis: { title:'Ocorrências', rangemode:'tozero' },
+    margin:{ t:50, l:60, r:20, b:100 }
+  };
+
+  Plotly.newPlot(box, [trace], layout, {
+    responsive:true, displaylogo:false,
+    modeBarButtonsToAdd: [
+      { name:'Download PNG',  icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'png',  filename:'trigramas_classes_png'}) },
+      { name:'Download SVG',  icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'svg',  filename:'trigramas_classes_svg'}) },
+      { name:'Download JPEG', icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'jpeg', filename:'trigramas_classes_jpeg'}) },
+      { name:'Download PDF',  icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'pdf',  filename:'trigramas_classes_pdf'}) }
+    ]
+  }).then(() => setTimeout(() => Plotly.Plots.resize(box), 0));
+}
+
+
+  // ======= Parse MusicXML =======
+  function extractNote(noteEl) {
+  let isRest = false, isChord = false, duration = 0, isGrace = false;
+  let tieStart = false, tieStop = false, voice = "1", staff = "1";
+  let step = "", alter = 0, octave = "", hasPitch = false;
+  const articulations = [];
+
+  for (const ch of noteEl.childNodes) {
+    if (ch.nodeType !== 1) continue;
+    const tag = ch.tagName;
+
+    if (tag === "rest") { isRest = true; }
+    else if (tag === "chord") { isChord = true; }
+    else if (tag === "duration") { duration = Number(ch.textContent) || 0; }
+    else if (tag === "voice") { voice = ch.textContent || "1"; }
+    else if (tag === "staff") { staff = ch.textContent || "1"; }
+    else if (tag === "grace") { isGrace = true; }
+    else if (tag === "pitch") {
+      for (const p of ch.childNodes) {
+        if (p.nodeType !== 1) continue;
+        if (p.tagName === "step")   step   = p.textContent || "";
+        else if (p.tagName === "alter")  alter  = Number(p.textContent) || 0;
+        else if (p.tagName === "octave") octave = p.textContent || "";
+      }
+      hasPitch = true;
+    }
+    else if (tag === "tie") {
+      const tp = ch.getAttribute("type");
+      if (tp === "start") tieStart = true;
+      else if (tp === "stop") tieStop = true;
+    }
+    else if (tag === "notations") {
+      for (const nCh of ch.childNodes) {
+        if (nCh.nodeType !== 1) continue;
+
+        if (nCh.tagName === "articulations") {
+          for (const a of nCh.childNodes) {
+            if (a.nodeType !== 1) continue;
+            articulations.push(a.tagName.toLowerCase());
+          }
+        } else if (nCh.tagName === "technical") {
+          for (const t of nCh.childNodes) {
+            if (t.nodeType !== 1) continue;
+            const name = t.tagName.toLowerCase();
+            if (name === "stopped") articulations.push("stopped");
+          }
+        }
+      }
+    }
+  }
+
+  const pitchKey = hasPitch ? `${step}${alter >= 0 ? "+" + alter : alter}${octave}` : null;
+  return { isRest, isChord, isGrace, duration, tieStart, tieStop, voice, staff, pitchKey, articulations };
+}
+
+
+  function getDirectMeasures(partEl) {
+    const out = [];
+    for (const ch of partEl.children) if (ch.tagName === "measure") out.push(ch);
+    return out;
+  }
+  function getDirectAttributes(measureEl) {
+    for (const ch of measureEl.children) if (ch.tagName === "attributes") return ch;
+    return null;
+  }
+
+  function buildMeasureTimelineFromFirstPart(xmlDoc) {
+  const part = xmlDoc.querySelector("score-partwise > part");
+  if (!part) throw new Error("Não encontrei <part> no MusicXML.");
+  const measures = Array.from(part.querySelectorAll(":scope > measure"));
+  if (!measures.length) throw new Error("Não encontrei <measure> dentro do <part>.");
+
+  let currentBeats = 4, currentBeatType = 4, currentDiv = 1;
+  measureStartsTicks = [];
+  measureEndsTicks   = [];
+
+  let startTick = 0;
+
+  measures.forEach((mEl, idx) => {
+    const attr = mEl.querySelector(":scope > attributes");
+    if (attr) {
+      const beats    = attr.querySelector("time > beats");
+      const beatType = attr.querySelector("time > beat-type");
+      if (beats && beatType) {
+        currentBeats    = Number(beats.textContent) || currentBeats;
+        currentBeatType = Number(beatType.textContent) || currentBeatType;
+      }
+      const divs = attr.querySelector("divisions");
+      if (divs) currentDiv = Number(divs.textContent) || currentDiv;
+    }
+
+    // comprimento "esperado" do compasso (em divisions)
+    const expectedDivs = Math.round(currentBeats * (currentDiv * 4 / currentBeatType));
+
+    // comprimento REAL pelo conteúdo (em divisions)
+    let cursor = 0, maxCursor = 0;
+    for (const ch of mEl.childNodes) {
+      if (ch.nodeType !== 1) continue;
+      if (ch.tagName === "note") {
+        const dur = Number(ch.querySelector("duration")?.textContent || "0");
+        const isChord = !!ch.querySelector("chord");
+        if (!isChord) cursor += dur;            // acorde não avança o tempo
+      } else if (ch.tagName === "backup") {
+        cursor -= Number(ch.querySelector("duration")?.textContent || "0");
+      } else if (ch.tagName === "forward") {
+        cursor += Number(ch.querySelector("duration")?.textContent || "0");
+      }
+      if (cursor > maxCursor) maxCursor = cursor; // guarda o maior alcance temporal
+    }
+
+    // decide qual usar
+    const isImplicit = mEl.getAttribute("implicit") === "yes";
+    let usedDivs = maxCursor || expectedDivs;
+    if (isImplicit || (idx === 0 && maxCursor > 0 && maxCursor < expectedDivs)) {
+      usedDivs = maxCursor; // trata anacruze/compasso parcial
+    }
+
+    const lenTicks = Math.round((usedDivs * TICKS_PER_QUARTER) / (currentDiv || 1));
+    measureStartsTicks[idx] = startTick;
+    measureEndsTicks[idx]   = startTick + lenTicks;
+    startTick += lenTicks;
+  });
+}
+
+// ======= Tempo (BPM) e conversão ticks→segundos =======
+let tempoTimeline = [];  // [{t:tick, qpm:quartersPerMinute}]
+
+function quartersPerBeatUnit(unit){
+  const map = {
+    whole:4, half:2, quarter:1, eighth:0.5,
+    '16th':0.25, '32nd':0.125, '64th':0.0625,
+    '128th':0.03125, '256th':0.015625
+  };
+  return map[unit] ?? 1; // default quarter
+}
+
+function buildTempoTimelineFromFirstPart(xmlDoc){
+  tempoTimeline = [];
+  const part = xmlDoc.querySelector("score-partwise > part");
+  if (!part) { tempoTimeline = [{ t:0, qpm:60 }]; return; }
+
+  const measures = getDirectMeasures(part);
+  let currentDiv = 1;
+
+  measures.forEach((mEl, mIdx) => {
+    const attr = getDirectAttributes(mEl);
+    if (attr) {
+      const divs = attr.querySelector("divisions");
+      if (divs) currentDiv = Number(divs.textContent) || currentDiv;
+    }
+
+    let cursorQ = 0; // posição “dentro” do compasso, em semínimas
+
+    for (const ch of mEl.childNodes) {
+      if (ch.nodeType !== 1) continue;
+      const tag = ch.tagName;
+
+      if (tag === "note") {
+        const dur = Number(ch.querySelector("duration")?.textContent || "0");
+        const isChord = !!ch.querySelector("chord");
+        if (!isChord) cursorQ += (dur / currentDiv);
+      }
+      else if (tag === "backup") {
+        const d = Number(ch.querySelector("duration")?.textContent || "0");
+        cursorQ -= (d / currentDiv);
+      }
+      else if (tag === "forward") {
+        const d = Number(ch.querySelector("duration")?.textContent || "0");
+        cursorQ += (d / currentDiv);
+      }
+      else if (tag === "direction") {
+        const offsetDivs = Number(ch.querySelector(":scope > offset")?.textContent || "0");
+        const localQ = cursorQ + (offsetDivs / (currentDiv || 1));
+        const tTick = measureStartsTicks[mIdx] + toTicks(localQ);
+
+        // <sound tempo="120"/>
+        const sound = ch.querySelector(":scope > sound[tempo]");
+        if (sound) {
+          const qpm = Number(sound.getAttribute("tempo"));
+          if (Number.isFinite(qpm) && qpm > 0) tempoTimeline.push({ t: tTick, qpm });
+        }
+
+        // <direction-type><metronome>...</metronome></direction-type>
+        const metr = ch.querySelector(":scope > direction-type > metronome");
+        if (metr) {
+          const perMin   = Number(metr.querySelector("per-minute")?.textContent || "0");
+          const beatUnit = metr.querySelector("beat-unit")?.textContent || "quarter";
+          const dots = metr.querySelectorAll("beat-unit-dot").length;
+          if (Number.isFinite(perMin) && perMin > 0) {
+            let q = quartersPerBeatUnit(beatUnit);
+            // aplicar “dots”: 1 ponto 1.5×, 2 pontos 1.75×, etc.
+            let mult = 1;
+            for (let i=0;i<dots;i++) mult += Math.pow(0.5, i+1);
+            q *= mult;
+            const qpm = perMin * q; // converter beat-unit/min → quarters/min
+            if (qpm > 0) tempoTimeline.push({ t: tTick, qpm });
+          }
+        }
+      }
+    }
+  });
+
+  // ordenar e garantir entrada em t=0
+  tempoTimeline.sort((a,b)=>a.t-b.t);
+  if (!tempoTimeline.length || tempoTimeline[0].t > 0) {
+    // default 60 qpm até que apareça algo
+    tempoTimeline.unshift({ t:0, qpm:60 });
+  }
+}
+
+function ticksRangeToSeconds(t0, t1){
+  if (t1 <= t0) return 0;
+  const tl = tempoTimeline && tempoTimeline.length ? tempoTimeline : [{ t:0, qpm:60 }];
+  let i = 0;
+  while (i+1 < tl.length && tl[i+1].t <= t0) i++;
+  let pos = t0, secs = 0;
+  while (pos < t1) {
+    const nextT = (i+1 < tl.length) ? Math.min(t1, tl[i+1].t) : t1;
+    const beats = ticksToBeats(nextT - pos);
+    secs += beats * (60 / tl[i].qpm);
+    pos = nextT;
+    if (i+1 < tl.length && pos >= tl[i+1].t) i++;
+    else if (i+1 >= tl.length) break;
+  }
+  return secs;
+}
+
+
+  function buildAllSpans(xmlDoc) {
+  const parts = Array.from(xmlDoc.querySelectorAll("score-partwise > part"));
+  if (!parts.length) throw new Error("Partitura sem <part>.");
+
+  const spans = [];
+
+  parts.forEach((partEl, partIdx) => {
+    const partId = partEl.getAttribute("id") || String(partIdx);
+    const measures = Array.from(partEl.querySelectorAll(":scope > measure"));
+    let currentDiv = 1;
+
+    // chave: partId|voice|staff|pitchKey
+    // valor: { start, lastEnd, voice, staff, partId, pitchKey, arts:Set<string> }
+    const open = new Map();
+
+    measures.forEach((mEl, mIdx) => {
+      const attr = mEl.querySelector(":scope > attributes");
+      if (attr) {
+        const divs = attr.querySelector("divisions");
+        if (divs) currentDiv = Number(divs.textContent) || currentDiv;
+      }
+
+      let cursorDivs = 0;
+      let lastOnsetDivs = 0;
+
+      for (const ch of mEl.childNodes) {
+        if (ch.nodeType !== 1) continue;
+        const tag = ch.tagName;
+
+        if (tag === "note") {
+          const n = extractNote(ch);
+          if ((n.isGrace || n.duration === 0) && !n.tieStart && !n.tieStop) continue;
+
+          const onsetDivs = n.isChord ? lastOnsetDivs : cursorDivs;
+          if (!n.isChord) lastOnsetDivs = cursorDivs;
+
+          const onsetTicks = measureStartsTicks[mIdx] + (onsetDivs * TICKS_PER_QUARTER) / currentDiv;
+
+          if (!n.isRest && n.pitchKey) {
+            const endTicks = onsetTicks + (n.duration * TICKS_PER_QUARTER) / currentDiv;
+            const tieKey = `${partId}|${n.voice}|${n.staff}|${n.pitchKey}`;
+            const artsNow = new Set(n.articulations || []);
+
+            if (n.tieStart && !n.tieStop) {
+              if (!open.has(tieKey)) {
+                open.set(tieKey, { start:onsetTicks, lastEnd:endTicks, voice:n.voice, staff:n.staff, partId, pitchKey:n.pitchKey, arts:new Set(artsNow) });
+              } else {
+                const o = open.get(tieKey);
+                o.lastEnd = endTicks;
+                artsNow.forEach(a => o.arts.add(a));
+              }
+            }
+            else if (!n.tieStart && n.tieStop) {
+              const o = open.get(tieKey);
+              if (o) {
+                spans.push({ start:o.start, end:endTicks, voice:n.voice, staff:n.staff, partId, pitchKey:n.pitchKey, arts:Array.from(o.arts) });
+                open.delete(tieKey);
+              } else {
+                spans.push({ start:onsetTicks, end:endTicks, voice:n.voice, staff:n.staff, partId, pitchKey:n.pitchKey, arts:Array.from(artsNow) });
+              }
+            }
+            else if (n.tieStart && n.tieStop) {
+              if (!open.has(tieKey)) {
+                open.set(tieKey, { start:onsetTicks, lastEnd:endTicks, voice:n.voice, staff:n.staff, partId, pitchKey:n.pitchKey, arts:new Set(artsNow) });
+              } else {
+                const o = open.get(tieKey);
+                o.lastEnd = endTicks;
+                artsNow.forEach(a => o.arts.add(a));
+              }
+            }
+            else {
+              spans.push({ start:onsetTicks, end:endTicks, voice:n.voice, staff:n.staff, partId, pitchKey:n.pitchKey, arts:Array.from(artsNow) });
+            }
+          }
+
+          if (!n.isChord) cursorDivs += n.duration;
+        }
+        else if (tag === "backup") {
+          const d = Number(ch.querySelector("duration")?.textContent || "0");
+          cursorDivs -= d;
+        }
+        else if (tag === "forward") {
+          const d = Number(ch.querySelector("duration")?.textContent || "0");
+          cursorDivs += d;
+        }
+      }
+    });
+
+    for (const [, o] of open) {
+      spans.push({ start:o.start, end:o.lastEnd, voice:o.voice, staff:o.staff, partId:o.partId, pitchKey:o.pitchKey, arts:Array.from(o.arts || []) });
+    }
+    open.clear();
+  });
+
+  for (const s of spans) {
+    if (!Number.isInteger(s.start) || !Number.isInteger(s.end)) {
+      throw new Error("Falha na integralidade dos ticks — verifique TPQ/divisions.");
+    }
+  }
+  return spans;
+}
+
+
+
+const EPS_TICKS = 0; // não cola eventos próximos
+
+function snapCloseTimes(events, eps){
+  if (!events.length) return events;
+  events.sort((a,b)=> (a.t!==b.t)?(a.t-b.t):((b.isEnd?1:0)-(a.isEnd?1:0)));
+  let anchor = events[0].t;
+  for (let i=1;i<events.length;i++){
+    if (events[i].t - anchor <= eps) events[i].t = anchor;
+    else anchor = events[i].t;
+  }
+  return events;
+}
+
+  // ======= Cálculo (fallback main thread) =======
+  function computePartitionsIncremental(spans, onlyChanges, includeArt) {
+  const events = [];
+  for (let i = 0; i < spans.length; i++) {
+    const s = spans[i];
+    events.push({ t: s.start, isEnd: false, idx: i });
+    events.push({ t: s.end,   isEnd: true,  idx: i });
+  }
+
+  // colar tempos muito próximos (se usar EPS_TICKS > 0)
+  snapCloseTimes(events, EPS_TICKS);
+  events.sort((a, b) =>
+    (a.t !== b.t) ? (a.t - b.t) : ((b.isEnd ? 1 : 0) - (a.isEnd ? 1 : 0))
+  );
+
+  const active     = new Set();   // índices ativos
+  const groupCounts= new Map();   // key -> contagem
+  const sizeFreq   = new Map();   // k (tamanho do grupo) -> frequência
+
+  const decSize = (sz) => { if (sz <= 0) return;
+    sizeFreq.set(sz, (sizeFreq.get(sz) || 0) - 1);
+    if (sizeFreq.get(sz) === 0) sizeFreq.delete(sz);
+  };
+  const incSize = (sz) => { if (sz <= 0) return;
+    sizeFreq.set(sz, (sizeFreq.get(sz) || 0) + 1);
+  };
+
+  const normArt = (s) => {
+    if (!includeArt) return '';
+    const a = (s.arts && s.arts.length) ? Array.from(new Set(s.arts)).sort() : ['(none)'];
+    return '|' + a.join('+');
+  };
+  const makeKey = (s) => `${s.start}|${s.end}${normArt(s)}`;
+
+  function addGroup(key){
+    const old = groupCounts.get(key) || 0;
+    const neu = old + 1;
+    if (old > 0) decSize(old);
+    groupCounts.set(key, neu);
+    incSize(neu);
+  }
+  function removeGroup(key){
+    const old = groupCounts.get(key) || 0;
+    if (old <= 0) return;
+    const neu = old - 1;
+    decSize(old);
+    if (neu === 0) groupCounts.delete(key);
+    else { groupCounts.set(key, neu); incSize(neu); }
+  }
+
+  function currentPartitionSig(){
+    if (sizeFreq.size === 0) return { part: [], sig: "[]" };
+    const sizes = Array.from(sizeFreq.keys()).sort((a, b) => a - b);
+    const part = [];
+    for (const k of sizes){
+      const f = sizeFreq.get(k) || 0;
+      for (let i = 0; i < f; i++) part.push(k);
+    }
+    return { part, sig: `[${part.join(",")}]` };
+  }
+
+  const rows = [];
+  let lastSig = null;
+  let mPtr = 0; // ponteiro de compasso
+
+  // Se o 1º evento ocorre depois de t=0 (ou não há eventos),
+  // registramos estado de PAUSA inicial em t=0
+  if (!events.length || events[0].t > 0) {
+    rows.push({
+      t: 0,
+      measure: 1,
+      posBeats: 0,
+      partition: []
+    });
+    lastSig = "[]";
+  }
+
+  for (let i = 0; i < events.length; ) {
+    const t = events[i].t;
+
+    // primeiro, saídas
+    while (i < events.length && events[i].t === t && events[i].isEnd) {
+      const e = events[i++], s = spans[e.idx];
+      const key = makeKey(s);
+      if (active.delete(e.idx)) removeGroup(key);
+    }
+    // depois, entradas
+    while (i < events.length && events[i].t === t && !events[i].isEnd) {
+      const e = events[i++], s = spans[e.idx];
+      const key = makeKey(s);
+      if (!active.has(e.idx)) { active.add(e.idx); addGroup(key); }
+    }
+
+    // atualizar compasso
+    while (mPtr < measureStartsTicks.length - 1 && t >= measureEndsTicks[mPtr]) mPtr++;
+
+    // REGISTRAR SEMPRE (inclui silêncio)
+const { part, sig } = currentPartitionSig();
+
+
+const isLastTimepoint = (i >= events.length);
+const isSilence       = (part.length === 0);
+const skipTrailingSilence = isLastTimepoint && isSilence;
+// 
+
+if (!skipTrailingSilence && (!onlyChanges || sig !== lastSig)){
+  rows.push({
+    t,
+    measure: mPtr + 1,
+    posBeats: (t - measureStartsTicks[mPtr]) / (TPQ || 1),
+    partition: part
+  });
+  lastSig = sig;
+}
+  }
+
+  return rows;
+}
+
+
+// === util: divisions vigentes por compasso (da PRIMEIRA parte) ===
+function __divsByMeasureForPart(partEl){
+  const measures = Array.from(partEl.querySelectorAll(':scope > measure'));
+  const out = [];
+  let cur = 1;
+  for (const mEl of measures){
+    const attr = mEl.querySelector(':scope > attributes');
+    if (attr){
+      const d = attr.querySelector('divisions');
+      if (d) cur = Number(d.textContent) || cur;
+    }
+    out.push(cur);
+  }
+  return out;
+}
+
+// === gera uma cópia do XML com <direction><words>Partição: [...]</words></direction> ===
+// Obs.: anota APENAS na primeira <part>, usando os tempos de lastRows (sua sequência já calculada)
+function annotateXMLWithPartitions(origDoc){
+  if (!origDoc) throw new Error('XML original ainda não foi carregado.');
+  if (!lastRows || lastRows.length === 0) throw new Error('Não há partições calculadas (lastRows vazio).');
+
+  // clona tudo para não mexer no original
+  const doc = origDoc.cloneNode(true);
+  const part = doc.querySelector('score-partwise > part');
+  if (!part) throw new Error('Não encontrei <part> no MusicXML.');
+
+  const measures = Array.from(part.querySelectorAll(':scope > measure'));
+  if (!measures.length) throw new Error('Não encontrei <measure> dentro do <part>.');
+
+  // divisions por compasso para calcular <offset>
+  const divsByM = __divsByMeasureForPart(part);
+
+  // para inserir <direction> depois de <attributes>, se existir
+  function insertDirectionAt(measureEl, dirEl){
+    const attr = measureEl.querySelector(':scope > attributes');
+    if (attr && attr.nextSibling) {
+      measureEl.insertBefore(dirEl, attr.nextSibling);
+    } else if (attr) {
+      measureEl.appendChild(dirEl);
+    } else {
+      measureEl.insertBefore(dirEl, measureEl.firstChild);
+    }
+  }
+
+  // cria e popula <direction> com palavras e offset
+  for (const r of lastRows){
+    const mIdx = Math.max(0, Math.min(measures.length - 1, (r.measure|0) - 1));
+    const divs = divsByM[mIdx] || 1;
+    const offsetDivs = Math.round((r.posBeats || 0) * divs);
+    // Gera só os números, com expoentes em unicode (¹²³…), SEM a palavra "Partição"
+const label = "[" + normalizePartitionLabel(formatPartition(r.partition)) + "]";
+
+
+    const dir = doc.createElement('direction');
+    dir.setAttribute('placement', 'above');
+
+    const dt = doc.createElement('direction-type');
+    const words = doc.createElement('words');
+    words.textContent = label;
+    dt.appendChild(words);
+
+    // <offset> em "divisions" desde o início do compasso
+    if (offsetDivs > 0){
+      const off = doc.createElement('offset');
+      off.textContent = String(offsetDivs);
+      dir.appendChild(off);
+    }
+
+    dir.appendChild(dt);
+    insertDirectionAt(measures[mIdx], dir);
+  }
+
+  // serializa
+  const ser = new XMLSerializer();
+  return ser.serializeToString(doc);
+}
+
+// === clique do botão: gerar e baixar ===
+function downloadAnnotatedXml(){
+  try{
+    const xmlTxt = annotateXMLWithPartitions(__xmlDocOrig);
+    const blob = new Blob([xmlTxt], { type: 'application/xml;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${__xmlOrigName}_anotado.musicxml`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } catch (e){
+    setStatus('Erro ao gerar XML anotado: ' + (e && e.message ? e.message : e), true);
+  }
+}
+
+
+  // ======= Worker sempre ativo (com fallback) =======
+
+function getWorker() {
+  if (worker) return worker;
+  try {
+    const code = `
+onmessage = (ev) => {
+  try {
+    const { spans, measureStartsTicks, measureEndsTicks, onlyChanges, TPQ, EPS, includeArt } = ev.data;
+
+    function snapCloseTimes(events, eps){
+      if (!events.length) return events;
+      events.sort((a,b)=> (a.t!==b.t)?(a.t-b.t):((b.isEnd?1:0)-(a.isEnd?1:0)));
+      let anchor = events[0].t;
+      for (let i=1;i<events.length;i++){
+        if (Math.abs(events[i].t - anchor) <= (eps||0)) events[i].t = anchor;
+        else anchor = events[i].t;
+      }
+      return events;
+    }
+
+    const events = [];
+    for (let i=0;i<spans.length;i++){
+      const s = spans[i];
+      events.push({ t:s.start, isEnd:false, idx:i });
+      events.push({ t:s.end,   isEnd:true,  idx:i });
+    }
+    snapCloseTimes(events, EPS||0);
+    events.sort((a,b)=> (a.t!==b.t)?(a.t-b.t):((b.isEnd?1:0)-(a.isEnd?1:0)));
+
+    const active      = new Set();
+    const groupCounts = new Map();
+    const sizeFreq    = new Map();
+
+    const decSize = (sz)=>{ if(sz<=0) return; sizeFreq.set(sz,(sizeFreq.get(sz)||0)-1); if(sizeFreq.get(sz)===0) sizeFreq.delete(sz); };
+    const incSize = (sz)=>{ if(sz<=0) return; sizeFreq.set(sz,(sizeFreq.get(sz)||0)+1); };
+
+    const normArt = (s) => {
+      if (!includeArt) return '';
+      const a = (s.arts && s.arts.length) ? Array.from(new Set(s.arts)).sort() : ['(none)'];
+      return '|' + a.join('+');
+    };
+    const makeKey = (s) => String(s.start) + '|' + String(s.end) + normArt(s);
+
+    function addGroup(key){ const old=groupCounts.get(key)||0; const neu=old+1; if(old>0) decSize(old); groupCounts.set(key,neu); incSize(neu); }
+    function removeGroup(key){ const old=groupCounts.get(key)||0; if(old<=0) return; const neu=old-1; decSize(old); if(neu===0) groupCounts.delete(key); else { groupCounts.set(key,neu); incSize(neu); } }
+
+    function currentPartitionSig(){
+      if (sizeFreq.size===0) return { part:[], sig:"[]" };
+      const sizes = Array.from(sizeFreq.keys()).sort((a,b)=>a-b);
+      const part = []; for (const k of sizes){ const f=sizeFreq.get(k)||0; for(let i=0;i<f;i++) part.push(k); }
+      return { part, sig: '[' + part.join(',') + ']' };
+    }
+
+    const rows = [];
+    let lastSig = null, mPtr = 0;
+
+    // pausa inicial em t=0 quando o 1º evento é depois de 0 (ou não há eventos)
+    if (!events.length || events[0].t > 0){
+      rows.push({ t:0, measure:1, posBeats:0, partition:[] });
+      lastSig = "[]";
+    }
+
+    for (let i=0; i<events.length; ) {
+      const t = events[i].t;
+
+      // saídas
+      while (i<events.length && events[i].t===t && events[i].isEnd){
+        const e = events[i++], s = spans[e.idx];
+        const key = makeKey(s);
+        if (active.delete(e.idx)) removeGroup(key);
+      }
+      // entradas
+      while (i<events.length && events[i].t===t && !events[i].isEnd){
+        const e = events[i++], s = spans[e.idx];
+        const key = makeKey(s);
+        if (!active.has(e.idx)) { active.add(e.idx); addGroup(key); }
+      }
+
+      // compasso
+      while (mPtr < measureStartsTicks.length - 1 && t >= measureEndsTicks[mPtr]) mPtr++;
+
+      // REGISTRAR SEMPRE (inclui silêncio)
+      const { part, sig } = currentPartitionSig();
+      if (!onlyChanges || sig !== lastSig){
+        rows.push({
+          t,
+          measure: mPtr + 1,
+          posBeats: (t - measureStartsTicks[mPtr]) / (TPQ || 1),
+          partition: part
+        });
+        lastSig = sig;
+      }
+    }
+
+    if (rows.length > 1 && rows[rows.length - 1].partition.length === 0) {
+  rows.pop();
+}
+
+postMessage({ ok:true, rows });
+
+
+  } catch (e) {
+    postMessage({ ok:false, error: String(e && e.message || e) });
+  }
+};
+`;
+    const blob = new Blob([code], { type: "text/javascript" });
+    worker = new Worker(URL.createObjectURL(blob));
+    return worker;
+  } catch (_) {
+    return null;
+  }
+}
+
+  // ======= Render principal =======
+  function render(rows) {
+    lastRows = rows.slice();
+
+    // Sequência compacta
+    const seq = [];
+    let lastSig = null;
+    for (const r of rows) {
+      const sig = JSON.stringify(r.partition);
+      if (sig !== lastSig) { seq.push(r.partition.slice()); lastSig = sig; }
+    }
+    const seqDiv = document.getElementById("seq");
+    seqDiv.innerHTML = seq.length
+      ? `<strong>Sequência (sem repetições):</strong> ` +
+        seq.map(p => `<span class="chip mono">${formatPartition(p)}</span>`).join(" ")
+      : "";
+
+    exportBtn.disabled = rows.length === 0;
+  }
+
+  // ======= DN rows =======
+  function buildDnRowsFromLastRows() {
+    if (!lastRows || !lastRows.length) return [];
+    return lastRows.map(r => {
+      const { dispersao, aglomeracao, simult } = calcDispersaoAglomeracao(r.partition);
+      return { t:r.t, measure:r.measure, posBeats:r.posBeats, simult, part:r.partition.slice(), dispersao, aglomeracao };
+    });
+  }
+
+  // ======= VIZ DOCK helpers =======
+
+function computeMidiAttackCounts(xmlDoc){
+  // pressupõe TPQ e timeline de compassos já montados antes de buildAllSpans()
+  const spans = buildAllSpans(xmlDoc); // cada span = 1 ataque (ties fundidos)
+  const counts = new Map();
+  for (const s of spans){
+    const m = midiFromPitchKey(s.pitchKey);
+    if (m == null) continue;
+    counts.set(m, (counts.get(m) || 0) + 1); // conta ataques de qualquer parte/voz
+  }
+  return counts; // Map<midi, totalAtaques>
+}
+
+
+// ====== ESPAÇO DE ALTURAS ======
+
+async function ensureOSMDLoaded(){
+  if (window.OpenSheetMusicDisplay || (window.opensheetmusicdisplay && window.opensheetmusicdisplay.OpenSheetMusicDisplay)) return;
+  await new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.8.8/build/opensheetmusicdisplay.min.js';
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('Falha ao carregar OSMD'));
+    document.head.appendChild(s);
+  });
+}
+
+// pc (0..11) -> (step, alter) preferindo sustenidos (C,C#,D,...)
+// pc (0..11) -> (step, alter) preferindo sustenidos (C, C#, D, ...)
+function stepAlterFromPc(pc){
+  const MAP = [
+    {step:'C', alter:0}, {step:'C', alter:1}, {step:'D', alter:0}, {step:'D', alter:1},
+    {step:'E', alter:0}, {step:'F', alter:0}, {step:'F', alter:1}, {step:'G', alter:0},
+    {step:'G', alter:1}, {step:'A', alter:0}, {step:'A', alter:1}, {step:'B', alter:0}
+  ];
+  return MAP[((pc % 12) + 12) % 12];
+}
+
+function buildPitchSpaceXml(midis, counts){
+  const divisions = 1;           // 1 divisão = 1 semínima
+  const beats = 4, beatType = 4; // 4/4
+  const partId = 'P1';
+  const MIDDLE_C = 60;
+
+  const low  = midis.filter(m => m <  MIDDLE_C);
+  const high = midis.filter(m => m >= MIDDLE_C);
+  const startClef = low.length ? {sign:'F', line:4} : {sign:'G', line:2};
+
+  // cabeçalho: título no topo, part-name vazio (nada ao lado da pauta)
+  let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="3.1">
+  <work><work-title>Espaço de Alturas</work-title></work>
+  <part-list>
+    <score-part id="${partId}"><part-name></part-name></score-part>
+  </part-list>
+  <part id="${partId}">`;
+
+  let mNum = 1, notesInBar = 0;
+  const openMeasure = (withClef) => {
+    xml += `<measure number="${mNum}">`;
+    if (mNum === 1){
+      xml += `<attributes>
+        <divisions>${divisions}</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>${beats}</beats><beat-type>${beatType}</beat-type></time>
+        <clef><sign>${withClef.sign}</sign><line>${withClef.line}</line></clef>
+      </attributes>`;
+    } else if (withClef){
+      // só troca de clave quando necessário (sem repetir fórmula)
+      xml += `<attributes><clef><sign>${withClef.sign}</sign><line>${withClef.line}</line></clef></attributes>`;
+    }
+    notesInBar = 0;
+  };
+  const closeMeasure = () => { xml += `</measure>`; mNum++; };
+
+  const addNote = (m) => {
+    if (notesInBar >= beats){ closeMeasure(); openMeasure(null); }
+    const pc = ((m % 12) + 12) % 12;
+    const { step, alter } = stepAlterFromPc(pc);
+    const octave = Math.floor(m / 12) - 1;
+    const cnt = (counts && typeof counts.get === 'function') ? (counts.get(m) || 0) : 0;
+
+
+    xml += `<note><pitch><step>${step}</step>`;
+    if (alter) xml += `<alter>${alter}</alter>`;
+    xml += `<octave>${octave}</octave></pitch>
+      <duration>${divisions}</duration><type>quarter</type>
+      <lyric number="1"><text>${cnt}</text></lyric>`;
+    if (alter ===  1) xml += `<accidental>sharp</accidental>`;
+    if (alter === -1) xml += `<accidental>flat</accidental>`;
+    if (alter ===  2) xml += `<accidental>double-sharp</accidental>`;
+    if (alter === -2) xml += `<accidental>double-flat</accidental>`;
+    xml += `</note>`;
+
+    notesInBar++;
+  };
+
+  // bloco grave (clave de fá), depois agudo (clave de sol)
+  openMeasure(startClef);
+  for (const m of low) addNote(m);
+
+  if (high.length){
+    if (notesInBar) closeMeasure();
+    openMeasure({sign:'G', line:2});
+    for (const m of high) addNote(m);
+  }
+
+  if (notesInBar) closeMeasure();
+  xml += `</part></score-partwise>`;
+  return xml;
+}
+
+
+// Renderiza no dock + botão de download
+async function showPitchSpace(){
+  const dock = clearDock();
+
+  if (!__xmlDocOrig){
+    const box = freshDiv(dock);
+    box.innerHTML = '<div class="muted">Carregue um MusicXML.</div>';
+    return;
+  }
+
+  await ensureOSMDLoaded();
+  const OSMDClass = window.OpenSheetMusicDisplay || window.opensheetmusicdisplay?.OpenSheetMusicDisplay;
+  if (!OSMDClass){
+    const box = freshDiv(dock);
+    box.innerHTML = '<div class="muted">Não consegui inicializar o OpenSheetMusicDisplay.</div>';
+    return;
+  }
+  // Precisamos da grade de compassos para buildAllSpans()
+  TICKS_PER_QUARTER = computeGlobalTPQ(__xmlDocOrig);
+  buildMeasureTimelineFromFirstPart(__xmlDocOrig);
+
+  // Todas as alturas usadas (todas as partes/vozes), deduplicadas por MIDI
+  const spans = buildAllSpans(__xmlDocOrig);
+  const uniqMidis = Array.from(
+    new Set(spans.map(s => midiFromPitchKey(s.pitchKey)).filter(v => v != null))
+  ).sort((a,b) => a - b);
+
+  const box = freshDiv(dock);
+  if (!uniqMidis.length){
+    box.innerHTML = '<div class="muted">Sem notas (ou só pausas).</div>';
+    return;
+  }
+
+  const counts = computeMidiAttackCounts(__xmlDocOrig); // Map<midi, contagem de ataques>
+const xml = buildPitchSpaceXml(uniqMidis, counts);
+
+
+  // Botão de download
+  const actions = document.createElement('div');
+  actions.style.display = 'flex';
+  actions.style.gap = '8px';
+  actions.style.margin = '8px 0';
+  const btn = document.createElement('button');
+  btn.textContent = 'Baixar XML (Espaço de Alturas)';
+  btn.onclick = () => download(`${__xmlOrigName || 'arquivo'}_espaco_alturas.musicxml`, xml, 'application/xml');
+  dock.appendChild(actions); actions.appendChild(btn);
+
+  // Renderização da partitura
+  const scoreDiv = document.createElement('div');
+scoreDiv.id = 'pitchSpaceScore';
+scoreDiv.style.width = '100%';
+dock.appendChild(scoreDiv);
+
+// já validamos OSMDClass lá em cima; use ele aqui
+const osmd = new OSMDClass(scoreDiv, {
+  autoResize: true,
+  backend: 'svg',
+  drawPartNames: false,
+  drawPartAbbreviations: false
+});
+await osmd.load(xml);
+osmd.render();
+
+}
+
+
+// Garante X estritamente crescente dentro de cada segmento
+function makeStrictlyIncreasing(xs, eps = 1e-6){
+  const out = xs.slice();
+  for (let i = 1; i < out.length; i++){
+    if (!(out[i] > out[i-1])) out[i] = out[i-1] + eps;
+  }
+  return out;
+}
+
+
+// Intervalos contínuos onde há SOM (contagem ativa > 0)
+// Intervalos onde há SOM (active > 0), agregando deltas por tempo
+function computeActiveSegments(spans){
+  const deltaByT = new Map(); // t => soma de deltas
+  for (const s of spans){
+    deltaByT.set(s.start, (deltaByT.get(s.start) || 0) + 1);
+    deltaByT.set(s.end,   (deltaByT.get(s.end)   || 0) - 1);
+  }
+  const times = Array.from(deltaByT.keys()).sort((a,b)=>a-b);
+
+  const segs = [];
+  let active = 0;
+  let segStart = null;
+
+  for (const t of times){
+    const prev = active;
+    active += deltaByT.get(t) || 0;
+
+    // entrou som exatamente em t
+    if (prev <= 0 && active > 0){
+      segStart = t;
+    }
+    // acabou som exatamente em t
+    else if (prev > 0 && active <= 0 && segStart != null){
+      segs.push({ t0: segStart, t1: t });
+      segStart = null;
+    }
+  }
+  // se terminar “soando”, fecha no último tempo conhecido
+  if (segStart != null){
+    const lastT = times[times.length - 1];
+    segs.push({ t0: segStart, t1: lastT });
+  }
+  return segs;
+}
+
+function timesInSameActiveSeg(tA, tB, segs){
+  return segs.some(s => tA>=s.t0 && tA<s.t1 && tB>=s.t0 && tB<s.t1);
+}
+
+
+// ======== Helpers de altura ========
+function parsePitchKey(pk){
+  const m = /^([A-G])([+-]\d)(\d+)$/.exec(pk || "");
+  if (!m) return null;
+  return { step: m[1], alter: Number(m[2]), octave: Number(m[3]) };
+}
+function midiFromPitchKey(pk){
+  const p = parsePitchKey(pk); if (!p) return null;
+  const BASE = {C:0,D:2,E:4,F:5,G:7,A:9,B:11};
+  return (p.octave + 1)*12 + BASE[p.step] + p.alter;
+}
+function nameFromPitchKey(pk){
+  const p = parsePitchKey(pk); if (!p) return "";
+  const acc = p.alter > 0 ? "#".repeat(p.alter) : p.alter < 0 ? "b".repeat(-p.alter) : "";
+  return p.step + acc + p.octave;
+}
+function nameFromMidi(m){
+  const PCS = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  const pc = ((m % 12) + 12) % 12;
+  const oct = Math.floor(m/12) - 1;
+  return PCS[pc] + oct;
+}
+
+// ======== Série de registro (extremos) ========
+function computeRegisterSeries(spans){
+  const events = [];
+  for (let i=0;i<spans.length;i++){
+    const s = spans[i];
+    events.push({ t:s.start, isEnd:false, idx:i });
+    events.push({ t:s.end,   isEnd:true,  idx:i });
+  }
+  snapCloseTimes(events, EPS_TICKS);
+  events.sort((a,b)=> (a.t!==b.t)?(a.t-b.t):((b.isEnd?1:0)-(a.isEnd?1:0)));
+
+  const activeMidi = new Map(); // idx -> midi
+  const out = [];
+
+  for (let i=0;i<events.length;){
+    const t = events[i].t;
+    let started = false;
+
+    // 1º saem
+    while (i<events.length && events[i].t===t && events[i].isEnd){
+      const e = events[i++]; activeMidi.delete(e.idx);
+    }
+    // depois entram (onset/articulação)
+    while (i<events.length && events[i].t===t && !events[i].isEnd){
+      const e = events[i++], s = spans[e.idx];
+      const m = midiFromPitchKey(s.pitchKey);
+      if (m != null) activeMidi.set(e.idx, m);
+      started = true;
+    }
+
+    // registra apenas quando houve início em t
+    if (started && activeMidi.size){
+      const midis = Array.from(activeMidi.values());
+      const loMidi = Math.min(...midis), hiMidi = Math.max(...midis);
+      const muMidi = midis.reduce((a,b)=>a+b,0) / midis.length;
+
+      // pega nomes respeitando #/b do XML
+      const loEntry = [...activeMidi.entries()].find(([,m]) => m === loMidi);
+      const hiEntry = [...activeMidi.entries()].find(([,m]) => m === hiMidi);
+      const loName  = nameFromPitchKey(spans[loEntry[0]].pitchKey);
+      const hiName  = nameFromPitchKey(spans[hiEntry[0]].pitchKey);
+      const muName  = nameFromMidi(Math.round(muMidi));
+
+      out.push({ t, loMidi, hiMidi, muMidi, loName, hiName, muName });
+    }
+  }
+  return out;
+}
+
+// ======== Densidade Compressão ========
+// Nota: "notas diferentes" = pitches únicos (dedup de uníssonos), no intervalo inclusivo [grave..aguda].
+
+function computeDensityCompressionSeries(spans){
+  const events = [];
+  for (let i=0;i<spans.length;i++){
+    const s = spans[i];
+    events.push({ t:s.start, isEnd:false, idx:i });
+    events.push({ t:s.end,   isEnd:true,  idx:i });
+  }
+  snapCloseTimes(events, EPS_TICKS);
+  events.sort((a,b)=> (a.t!==b.t)?(a.t-b.t):((b.isEnd?1:0)-(a.isEnd?1:0)));
+
+  const activeMidi = new Map(); // idx -> midi
+  const out = [];
+
+  for (let i=0;i<events.length;){
+    const t = events[i].t;
+    let started = false;
+
+    // 1º saem
+    while (i<events.length && events[i].t===t && events[i].isEnd){
+      const e = events[i++]; activeMidi.delete(e.idx);
+    }
+    // depois entram (onset/articulação)
+    while (i<events.length && events[i].t===t && !events[i].isEnd){
+      const e = events[i++], s = spans[e.idx];
+      const m = midiFromPitchKey(s.pitchKey);
+      if (m != null) activeMidi.set(e.idx, m);
+      started = true;
+    }
+
+    // registra somente "a cada nota articulada"
+    if (started && activeMidi.size){
+      const uniq = new Set(activeMidi.values());          // N = notas únicas soando
+      const arr  = Array.from(uniq);
+      const lo   = Math.min(...arr), hi = Math.max(...arr);
+      const I    = hi - lo;                               // intervalo em semitons
+      const N    = arr.length;
+
+      const value = I > 0 ? N / I : null;                 // evita divisão por zero (ponto fica vazio)
+      out.push({ t, value, N, I });
+    }
+  }
+  return out;
+}
+
+function showDensityCompression(){
+  const dock = clearDock();
+  const box  = freshDiv(dock, 420);
+
+  if (!__xmlDocOrig){ box.innerHTML = '<div class="muted">Carregue um MusicXML.</div>'; return; }
+
+  // grade temporal
+  TICKS_PER_QUARTER = computeGlobalTPQ(__xmlDocOrig);
+  buildMeasureTimelineFromFirstPart(__xmlDocOrig);
+
+  // spans (todas as partes/vozes, com ties)
+  const spans = buildAllSpans(__xmlDocOrig);
+  if (!spans.length){ box.innerHTML = '<div class="muted">Sem notas.</div>'; return; }
+
+  const series = computeDensityCompressionSeries(spans);
+  if (!series.length){ box.innerHTML = '<div class="muted">Sem eventos articulados.</div>'; return; }
+
+  const straight = document.getElementById('stepLines')?.checked;
+
+  const x = series.map(r => ticksToBeats(r.t));
+  const y = series.map(r => r.value);
+  const hover = series.map(r => `N=${r.N} | I=${r.I} | N/I=${r.value!=null ? r.value.toFixed(3) : '—'}`);
+
+  // eixo X por compasso
+  const measureNumbers = measures.map((m, i) => m.getAttribute('number') || String(i+1));
+  const totalMeasures = measureStartsTicks.length;
+  const xTickvalsAll = measureStartsTicks.map(t => ticksToBeats(t));
+  const tickStep = totalMeasures <= 50 ? 1 : (totalMeasures <= 100 ? 5 : 10);
+  const xTickvals = xTickvalsAll.filter((_, i) => (i % tickStep) === 0);
+  const xTicktext = xTickvals.map((_, i) => measureNumbers[i * tickStep]);
+
+
+  // eixo Y (0 … máx*1.1)
+  const finite = y.filter(v => v != null && Number.isFinite(v));
+  const ymax = finite.length ? Math.max(...finite) : 1;
+
+  const trace = {
+    x, y, type: 'scatter', mode: 'lines+markers',
+    line: { shape: straight ? 'hv' : 'linear' },
+    hoverinfo: 'text', hovertext: hover
+  };
+
+  const layout = {
+    title: 'Densidade-Compressão',
+    xaxis: { title:'Compassos (tempo)', tickmode:'array', tickvals:xTickvals, ticktext:xTicktext,
+             showgrid:true, showline:true, mirror:true, linecolor:'black' },
+    yaxis: { title:'Densidade-Compressão', rangemode:'tozero', range:[0, ymax*1.1],
+             showgrid:true, showline:true, mirror:true, linecolor:'black' },
+    margin:{ t:50, l:60, r:30, b:50 },
+    showlegend:false
+  };
+
+  Plotly.newPlot(box, [trace], layout, {
+    responsive:true, displaylogo:false,
+    modeBarButtonsToAdd: [
+      { name:'Download PNG',  icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'png',  filename:'densidade_compressao_png'}) },
+      { name:'Download SVG',  icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'svg',  filename:'densidade_compressao_svg'}) },
+      { name:'Download JPEG', icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'jpeg', filename:'densidade_compressao_jpeg'}) },
+      { name:'Download PDF',  icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'pdf',  filename:'densidade_compressao_pdf'}) }
+    ]
+  }).then(() => setTimeout(() => Plotly.Plots.resize(box), 0));
+}
+
+
+
+function computeParsimonySeries(){
+  // Estados **sem repetição lateral**
+  const states = getDistinctStates(); // [{t, part}]
+  if (states.length < 2) return { x:[], y:[], hover:[] };
+
+  // Precisamos dos spans para localizar pausas gerais
+  const spans = buildAllSpans(__xmlDocOrig);
+  const segs  = computeActiveSegments(spans);
+
+  const x = [], y = [], hover = [];
+
+  for (let i=0; i<states.length-1; i++){
+    const A = states[i], B = states[i+1];
+
+    // quebra o gráfico se houver PAUSA geral entre A e B
+    if (!timesInSameActiveSeg(A.t, B.t, segs)){
+      x.push(ticksToBeats(B.t));
+      y.push(null);                   // null quebra a linha no Plotly
+      hover.push('— (pausa geral) —');
+      continue;
+    }
+
+    const d = dmin_YDSG1(A.part, B.part, 24);  // caminho mínimo
+    const s = Sexp_from_d(d);
+
+    x.push(ticksToBeats(B.t));                 // posição no tempo do alvo
+    y.push(s);
+    const lblA = partitionLabelForCharts(A.part);
+    const lblB = partitionLabelForCharts(B.part);
+    hover.push(`${lblA} → ${lblB}<br>d_min=${d} · S=${s.toFixed(3)}`);
+  }
+  return { x, y, hover };
+}
+
+function showParsimonyGraph(){
+  const dock = clearDock();
+  const box  = freshDiv(dock, 420);
+
+  if (!__xmlDocOrig){ box.innerHTML = '<div class="muted">Carregue um MusicXML.</div>'; return; }
+
+  // grade temporal (compassos)
+  TICKS_PER_QUARTER = computeGlobalTPQ(__xmlDocOrig);
+  buildMeasureTimelineFromFirstPart(__xmlDocOrig);
+
+  // precisamos dos estados (sem repetições) e dos spans p/ detectar pausas
+  const states = getDistinctStates(); // [{t, part}]
+  if (states.length < 2){ box.innerHTML = '<div class="muted">Sem transições suficientes.</div>'; return; }
+
+  const spans = buildAllSpans(__xmlDocOrig);
+  const activeSegs = computeActiveSegments(spans); // trechos com som
+
+  const straight = document.getElementById('stepLines')?.checked;
+
+  // montamos vários "segmentos" (cada um vira um trace do Plotly)
+  const segments = [];               // [{x:[], y:[], hover:[]}, ...]
+  let seg = { x:[], y:[], hover:[] };
+  const singles = { x:[], y:[], hover:[] }; // pontos isolados (segmento de 1 ponto)
+
+  for (let i = 0; i < states.length - 1; i++){
+    const A = states[i], B = states[i+1];
+const sameRun = timesInSameActiveRun(A.t, B.t, activeSegs); // ou ... , activeSegs, 1) se quiser tol
+
+    // calcula a métrica (mesmo algoritmo que você já usa)
+    const d = dmin_YDSG1(A.part, B.part, 24);
+    const s = Sexp_from_d(d);
+    const xVal = ticksToBeats(B.t);
+    const hov  = `${partitionLabelForCharts(A.part)} → ${partitionLabelForCharts(B.part)}<br>d_min=${d} · S=${s.toFixed(3)}`;
+
+    if (!sameRun){
+      // fecha segmento atual
+      if (seg.x.length > 1) {
+        segments.push(seg);
+      } else if (seg.x.length === 1){
+        singles.x.push(seg.x[0]); singles.y.push(seg.y[0]); singles.hover.push(seg.hover[0]);
+      }
+      seg = { x:[], y:[], hover:[] }; // novo segmento
+
+      // *** Importante: NÃO perder o ponto da transição na borda da pausa ***
+      seg.x.push(xVal); seg.y.push(s); seg.hover.push(hov);
+      // não empurramos para segments ainda; veremos se o próximo passo continua o segmento
+    } else {
+      seg.x.push(xVal); seg.y.push(s); seg.hover.push(hov);
+    }
+  }
+
+  // fecha o último segmento
+  if (seg.x.length > 1) {
+    segments.push(seg);
+  } else if (seg.x.length === 1){
+    singles.x.push(seg.x[0]); singles.y.push(seg.y[0]); singles.hover.push(seg.hover[0]);
+  }
+
+  if (!segments.length && !singles.x.length){
+    box.innerHTML = '<div class="muted">Sem transições válidas.</div>';
+    return;
+  }
+
+  // conserta “só pontos”: X estritamente crescente em cada segmento
+  for (const s of segments) s.x = makeStrictlyIncreasing(s.x);
+
+  // eixo X por compasso (rótulos 1, 2, 3…)
+  const totalMeasures = measureStartsTicks.length;
+  const xTickvalsAll = measureStartsTicks.map(t => ticksToBeats(t));
+  const tickStep = totalMeasures <= 50 ? 1 : (totalMeasures <= 100 ? 5 : 10);
+  const xTickvals = xTickvalsAll.filter((_, i) => (i % tickStep) === 0);
+  const xTicktext = xTickvals.map((_, i) => String(i * tickStep + 1));
+
+  // traces: um por segmento (linhas+marcadores) + 1 trace só de marcadores p/ pontos isolados
+  const traces = segments.map(s => ({
+    x: s.x, y: s.y,
+    type: 'scatter',
+    mode: 'lines+markers',
+    line: { shape: straight ? 'hvh' : 'linear', width: 2 },
+    connectgaps: false,
+    hoverinfo: 'text',
+    hovertext: s.hover,
+    showlegend: false
+  }));
+
+  if (singles.x.length){
+    traces.push({
+      x: singles.x, y: singles.y,
+      type: 'scatter', mode: 'markers',
+      hoverinfo: 'text', hovertext: singles.hover,
+      name: 'isolados'
+    });
+  }
+
+  const layout = {
+    title: 'Parcimônia (similaridade) no tempo',
+    xaxis: {
+      title:'Compassos (tempo)',
+      tickmode:'array', tickvals:xTickvals, ticktext:xTicktext,
+      showgrid:true, showline:true, mirror:true, linecolor:'black'
+    },
+    yaxis: {
+      title:'Similaridade S (0–1)', range:[0, 1.01], dtick:0.1,
+      showgrid:true, showline:true, mirror:true, linecolor:'black'
+    },
+    margin:{ t:50, l:60, r:30, b:50 },
+    showlegend:false
+  };
+
+  Plotly.newPlot(box, traces, layout, {
+    responsive:true, displaylogo:false,
+    modeBarButtonsToAdd: [
+      { name:'Download PNG',  icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'png',  filename:'parcimonia_tempo_png'}) },
+      { name:'Download SVG',  icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'svg',  filename:'parcimonia_tempo_svg'}) },
+      { name:'Download JPEG', icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'jpeg', filename:'parcimonia_tempo_jpeg'}) },
+      { name:'Download PDF',  icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'pdf',  filename:'parcimonia_tempo_pdf'}) }
+    ]
+  }).then(() => setTimeout(() => Plotly.Plots.resize(box), 0));
+}
+
+
+// ======== Plot: Gráfico de Registro ========
+function showRegisterGraph(){
+  const dock = clearDock();
+  const box = freshDiv(dock); // sem altura fixa; vamos calcular depois
+
+  if (!__xmlDocOrig){ box.innerHTML = '<div class="muted">Carregue um MusicXML.</div>'; return; }
+
+  // garante TPQ e grade de compassos
+  TICKS_PER_QUARTER = computeGlobalTPQ(__xmlDocOrig);
+  buildMeasureTimelineFromFirstPart(__xmlDocOrig);
+
+  // spans de todas as partes/vozes (respeita ties)
+  const spans = buildAllSpans(__xmlDocOrig);
+  if (!spans.length){ box.innerHTML = '<div class="muted">Sem notas.</div>'; return; }
+
+  const series = computeRegisterSeries(spans);
+  if (!series.length){ box.innerHTML = '<div class="muted">Sem eventos articulados.</div>'; return; }
+
+  const straight = document.getElementById('stepLines')?.checked;
+
+  const x = series.map(r => ticksToBeats(r.t));
+  const yHi = series.map(r => r.hiMidi);
+  const yLo = series.map(r => r.loMidi);
+
+  const hoverHi = series.map(r => `Mais aguda: ${r.hiName}`);
+  const hoverLo = series.map(r => `Mais grave: ${r.loName}`);
+  const yMu    = series.map(r => r.muMidi);
+  const hoverMu= series.map(r => `Médio (μ): ${r.muName}`);
+
+  // eixo Y: notas (ordenadas por semitom) com rótulos C#4 etc.
+  const allMidis = spans.map(s => midiFromPitchKey(s.pitchKey)).filter(v => v!=null);
+  const minMidi = Math.min(...allMidis), maxMidi = Math.max(...allMidis);
+  const span = maxMidi - minMidi;
+  const yStep = span <= 36 ? 1 : (span <= 60 ? 2 : 3);
+  const yTickvals = [];
+  for (let m=minMidi; m<=maxMidi; m+=yStep) yTickvals.push(m);
+  const yTicktext = yTickvals.map(nameFromMidi);
+
+  // ⬇⬇⬇ AJUSTE 1 + 2: fonte menor e altura dinâmica ⬇⬇⬇
+  const tickFontSize = 9;                                // notas menores no eixo Y
+  const tickCount    = yTickvals.length;
+  const estHeight    = Math.min(1200, Math.max(480, 120 + tickCount * (tickFontSize + 4)));
+  box.style.height = estHeight + 'px';
+  // ⬆⬆⬆
+
+  // eixo X: compassos
+  const totalMeasures = measureStartsTicks.length;
+  const xTickvalsAll = measureStartsTicks.map(t => ticksToBeats(t));
+  const tickStep = totalMeasures <= 50 ? 1 : (totalMeasures <= 100 ? 5 : 10);
+  const xTickvals = xTickvalsAll.filter((_,i) => (i % tickStep) === 0);
+  const xTicktext = xTickvals.map((_,i) => String(i*tickStep + 1));
+
+  const traceHi = {
+    x, y: yHi, type: 'scatter', mode: 'lines+markers',
+    line: { shape: straight ? 'hv' : 'linear' },
+    hoverinfo: 'text', hovertext: hoverHi
+  };
+  const traceLo = {
+    x, y: yLo, type: 'scatter', mode: 'lines+markers',
+    line: { shape: straight ? 'hv' : 'linear' },
+    hoverinfo: 'text', hovertext: hoverLo
+  };
+
+  const traceMu = {
+    x, y: yMu,
+    type: 'scatter',
+    mode: 'lines',                           // sem marcadores pra não poluir
+    line: { shape: straight ? 'hv' : 'linear', dash: 'dot', width: 3 }, // linha pontilhada
+    hoverinfo: 'text',
+    hovertext: hoverMu
+  };
+
+
+  const layout = {
+    title: 'Gráfico de Registro',
+    xaxis: { title:'Compassos (tempo)', tickmode:'array', tickvals:xTickvals, ticktext:xTicktext,
+             showgrid:true, showline:true, mirror:true, linecolor:'black' },
+    yaxis: { title:'Alturas', tickmode:'array', tickvals:yTickvals, ticktext:yTicktext,
+             tickfont:{ size: tickFontSize },            // ⬅⬅⬅ AJUSTE 1: fonte menor
+             range:[minMidi-1, maxMidi+1], showgrid:true, showline:true, mirror:true, linecolor:'black' },
+    margin:{ t:50, l:70, r:30, b:50 },
+    showlegend:false                                     // ⬅⬅⬅ AJUSTE 3: sem legenda
+  };
+
+  Plotly.newPlot(box, [traceHi, traceLo, traceMu], layout,{
+    responsive:true, displaylogo:false,
+    modeBarButtonsToAdd: [
+      { name:'Download PNG',  icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'png',  filename:'grafico_registro_png'}) },
+      { name:'Download SVG',  icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'svg',  filename:'grafico_registro_svg'}) },
+      { name:'Download JPEG', icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'jpeg', filename:'grafico_registro_jpeg'}) },
+      { name:'Download PDF',  icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'pdf',  filename:'grafico_registro_pdf'}) }
+    ]
+  }).then(() => setTimeout(() => Plotly.Plots.resize(box), 0));
+}
+  function clearDock() {
+    const dock = document.getElementById('vizDock');
+    dock.innerHTML = '';
+    return dock;
+  }
+  function freshDiv(dock, heightPx) {
+    const el = document.createElement('div');
+    el.style.width = '100%';
+    if (heightPx) el.style.height = heightPx + 'px';
+    dock.appendChild(el);
+    return el;
+  }
+function partitionLabelForCharts(part){
+  // Mantém o mesmo visual (colchetes + expoente em superíndice)
+  const html = formatPartition(part);
+  return "[" + normalizePartitionLabel(html) + "]";
+}
+
+// Se NÃO queremos contar uníssonos separadamente, colapsa duplicatas
+// (mesmo pitchKey, MESMO start e MESMO end) em UM único span.
+function dedupeUnisons(spans, includeArticulations) {
+  const seen = new Set();
+  const normArt = (s) => {
+    const a = (s.arts && s.arts.length) ? Array.from(new Set(s.arts)).sort() : ['(none)'];
+    return a.join('+');
+  };
+  const out = [];
+  for (const s of spans) {
+    const artKey = includeArticulations ? `|${normArt(s)}` : '';
+    const key = `${s.start}|${s.end}|${s.pitchKey}${artKey}`;
+    if (!seen.has(key)) { seen.add(key); out.push(s); }
+  }
+  return out;
+}
+
+  // ======= Tabela DN (no container dado) =======
+  function renderDNTableInto(container) {
+    const dnRows = buildDnRowsFromLastRows();
+    if (!dnRows.length) { container.innerHTML = '<div class="muted">Sem dados.</div>'; return; }
+    container.innerHTML = `
+      <table style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr>
+            <th>Compasso</th>
+            <th>Posição no Compasso</th>
+            <th>Notas Simultâneas</th>
+            <th>Partição</th>
+            <th>Dispersão</th>
+            <th>Aglomeração</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${dnRows.map(r => `
+            <tr>
+              <td>${r.measure}</td>
+              <td>${fmt2(r.posBeats)}</td>
+              <td>${r.simult}</td>
+              <td>${formatPartition(r.part)}</td>
+              <td>${r.dispersao}</td>
+              <td>${r.aglomeracao}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
+  }
+
+  // ======= Gráfico DN (no container dado) =======
+  function plotDNChartInto(el) {
+const straight = document.getElementById('stepLines')?.checked;
+
+    const dnRows = buildDnRowsFromLastRows();
+    if (!dnRows.length) { el.innerHTML = '<div class="muted">Sem dados.</div>'; return; }
+
+    const x = dnRows.map(r => ticksToBeats(r.t));
+    const y = dnRows.map(r => r.simult);
+
+    const totalMeasures = measureStartsTicks.length;
+    const xTickvals = measureStartsTicks.map(t => ticksToBeats(t));
+    const tickStep = totalMeasures <= 50 ? 1 : (totalMeasures <= 100 ? 5 : 10);
+    const xTickvalsDecim = xTickvals.filter((_,i) => (i % tickStep) === 0);
+    const xTicktext = xTickvalsDecim.map((_,i) => String(i*tickStep + 1));
+
+    const trace = {
+  x, y,
+  type: 'scatter',
+  mode: 'lines+markers',
+  line: { shape: straight ? 'hv' : 'linear' }   
+};
+
+    const layout = {
+      title:'Gráfico de Densidade-Número',
+      xaxis:{ title:'Compassos (tempo)', tickmode:'array', tickvals:xTickvalsDecim, ticktext:xTicktext, showgrid:true, showline:true, mirror:true, linecolor:'black' },
+      yaxis:{ title:'Densidade-Número', dtick:1, rangemode:'tozero', showgrid:true, showline:true, mirror:true, linecolor:'black' },
+      margin:{ t:40, l:50, r:30, b:50 }, showlegend:false
+    };
+
+Plotly.newPlot(el, [trace], layout, {
+  responsive: true,
+  displaylogo: false,
+  modeBarButtonsToAdd: [
+    { name:'Download PNG',  icon: Plotly.Icons.camera, click: gd => Plotly.downloadImage(gd, {format:'png',  filename:'indexograma_png'}) },
+    { name:'Download SVG',  icon: Plotly.Icons.camera, click: gd => Plotly.downloadImage(gd, {format:'svg',  filename:'indexograma_svg'}) },
+    { name:'Download JPEG', icon: Plotly.Icons.camera, click: gd => Plotly.downloadImage(gd, {format:'jpeg', filename:'indexograma_jpeg'}) }
+  ]
+}).then(() => setTimeout(() => Plotly.Plots.resize(el), 0));
+
+  }
+
+// Tabela de Markov (partições) — PROBABILIDADES por linha
+function showMarkovTable() {
+  const dock = clearDock();
+
+  // barra de ações (CSV)
+  const tools = document.createElement('div');
+  tools.style.display = 'flex';
+  tools.style.gap = '8px';
+  tools.style.margin = '8px 0';
+  dock.appendChild(tools);
+
+  const box = freshDiv(dock); // aqui vai a tabela
+
+  // Sequência de partições (sem repetições laterais), como HTML "[1<sup>2</sup>3]"
+  const seq = getPartitionSeqDistinctLabels();
+  if (seq.length < 2) {
+    box.innerHTML = '<div class="muted">Sem transições suficientes.</div>';
+    return;
+  }
+
+  // Rótulos únicos e matriz de contagens Z (A->B)
+  const labels = Array.from(new Set(seq));
+  const idx = new Map(labels.map((l, i) => [l, i]));
+  const N = labels.length;
+  const Z = Array.from({ length: N }, () => Array(N).fill(0));
+
+  for (let i = 0; i < seq.length - 1; i++) {
+    const a = seq[i], b = seq[i + 1];
+    if (a === b) continue; // ignora auto-transição imediata
+    Z[idx.get(a)][idx.get(b)]++;
+  }
+
+  // Ordena linhas por nº de saídas (desc) e aplica a mesma ordem às colunas
+  const rowSum = labels.map((_, i) => Z[i].reduce((s, v) => s + v, 0));
+  const order = [...labels.keys()].sort((i, j) => rowSum[j] - rowSum[i]);
+  const L = order.map(i => labels[i]);                        // rótulos reordenados
+  const Zord = order.map(i => order.map(j => Z[i][j]));       // matriz reordenada
+
+  // Probabilidades por linha: P[i][j] = Z[i][j] / sum(Z[i,*])
+  const P = Zord.map(row => {
+    const rTot = row.reduce((s, v) => s + v, 0);
+    return row.map(v => (rTot ? v / rTot : 0));
+  });
+
+  // ==== Montagem da Tabela ====
+  const thead =
+    `<thead>
+      <tr>
+        <th class="mono">De \\ Para</th>
+        ${L.map(l => `<th class="mono">${l}</th>`).join('')}
+        <th>Total</th>
+      </tr>
+    </thead>`;
+
+  // Corpo com probabilidades; "Total" da linha = 1.000 (ou 0.000 se sem saídas)
+  const tbody =
+    `<tbody>
+      ${Zord.map((row, i) => {
+        const rTot = row.reduce((s, v) => s + v, 0);
+        return `<tr>
+          <th class="mono" style="text-align:left;">${L[i]}</th>
+          ${P[i].map(p => `<td>${p.toFixed(3)}</td>`).join('')}
+          <td><strong>${rTot ? '1.000' : '0.000'}</strong></td>
+        </tr>`;
+      }).join('')}
+    </tbody>`;
+
+  // Rodapé não é necessário para probabilidades por linha
+  const tfoot = '';
+
+  box.innerHTML = `
+    <table style="width:100%; border-collapse:collapse;">
+      ${thead}${tbody}${tfoot}
+    </table>
+    <div class="muted" style="margin-top:6px">
+      Células mostram P(para | de). Cada linha soma 1.
+    </div>
+  `;
+
+  // ==== CSV com probabilidades ====
+  const btnCsv = document.createElement('button');
+  btnCsv.textContent = 'Baixar Tabela (CSV)';
+  btnCsv.onclick = () => {
+    const header = ['De \\ Para', ...L.map(l => "[" + normalizePartitionLabel(l) + "]"), 'Total'];
+    const lines = [header];
+
+    for (let i = 0; i < L.length; i++) {
+      const rot = "[" + normalizePartitionLabel(L[i]) + "]";
+      const rowP = P[i].map(p => p.toFixed(6)); // mais casas no CSV
+      const rTot = Zord[i].reduce((s, v) => s + v, 0);
+      lines.push([rot, ...rowP, rTot ? '1' : '0']);
+    }
+
+    const csv = lines.map(r => r.join(';')).join('\n');
+    download('tabela_markov_particoes_prob.csv', csv);
+  };
+  tools.appendChild(btnCsv);
+}
+
+// gera o HTML de uma tabela com os dados DN (Excel abre como .xls)
+function buildDnTableHtml(dnRows){
+  // usa expoente unicode: [1²3] etc.
+  const partLabel = (p) => "[" + normalizePartitionLabel(formatPartition(p)) + "]";
+
+  const head = `
+    <thead>
+      <tr>
+        <th>Compasso</th>
+        <th>Posição no Compasso</th>
+        <th>Notas Simultâneas</th>
+        <th>Partição</th>
+        <th>Dispersão</th>
+        <th>Aglomeração</th>
+      </tr>
+    </thead>`;
+
+  const body = `<tbody>${
+    dnRows.map(r => `
+      <tr>
+        <td>${r.measure}</td>
+        <td>${(Math.round(r.posBeats*100)/100).toFixed(2)}</td>
+        <td>${r.simult}</td>
+        <td>${partLabel(r.part)}</td>
+        <td>${r.dispersao}</td>
+        <td>${r.aglomeracao}</td>
+      </tr>`).join('')
+  }</tbody>`;
+
+  // formato “HTML de planilha” que o Excel entende como .xls
+  return `
+  <html xmlns:o="urn:schemas-microsoft-com:office:office"
+        xmlns:x="urn:schemas-microsoft-com:office:excel"
+        xmlns="http://www.w3.org/TR/REC-html40">
+    <head>
+      <meta charset="utf-8" />
+      <meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8" />
+    </head>
+    <body>
+      <table border="1">${head}${body}</table>
+    </body>
+  </html>`;
+}
+
+
+
+  // ======= Indexograma (no container dado) =======
+  function plotIndexogramaInto(el) {
+const straight = document.getElementById('stepLines')?.checked;
+
+    const dnRows = buildDnRowsFromLastRows();
+    if (!dnRows.length) { el.innerHTML = '<div class="muted">Sem dados.</div>'; return; }
+
+    const x = dnRows.map(r => ticksToBeats(r.t));
+    const yDisp = dnRows.map(r => r.dispersao);
+    const yAggl = dnRows.map(r => -r.aglomeracao);
+
+    const maxDisp = Math.max(0, ...yDisp);
+    const maxAgg  = Math.max(0, ...yAggl.map(Math.abs));
+    const balancedMax = Math.max(maxDisp, maxAgg) + 5;
+    const yRange = [-balancedMax, balancedMax];
+    const yLabel = maxDisp + 1;
+
+    const totalMeasures = measureStartsTicks.length;
+    const xTickvals = [];
+    const xTicktext = [];
+    const tickStep = totalMeasures <= 50 ? 1 : (totalMeasures <= 100 ? 5 : 10);
+      for (let m = 0; m < totalMeasures; m += tickStep) {
+      xTickvals.push(ticksToBeats(measureStartsTicks[m]));
+      xTicktext.push(String(m + 1));
+  }
+    const annotations = [];
+    let lastSig = null;
+    dnRows.forEach((r, i) => {
+      const sig = JSON.stringify(r.part);
+      if (sig !== lastSig) {
+        const html  = formatPartition(r.part);
+        const label = "[" + normalizePartitionLabel(html) + "]";
+        annotations.push({ x:x[i], xref:'x', y:yLabel, yref:'y', yanchor:'bottom', text:label, showarrow:false, font:{ size:11 }, align:'center' });
+        lastSig = sig;
+      }
+    });
+
+    const hover = dnRows.map(r =>
+      `Partição: ${formatPartitionPlain(r.part)}<br>Dispersão: ${r.dispersao}<br>Aglomeração: ${r.aglomeracao}`
+    );
+
+    const traceDispersion = {
+      x, y: yDisp, type:'scatter', mode:'lines+markers',
+      fill:'tozeroy', fillcolor:'rgba(200,200,200,0.5)',
+      line:{ color:'blue', width:2, shape: straight ? 'hv' : 'linear' }, marker:{ size:8 },
+      hoverinfo:'text', hovertext: hover
+    };
+
+    const traceAgglomeration = {
+      x, y: yAggl, type:'scatter', mode:'lines+markers',
+      fill:'tozeroy', fillcolor:'rgba(120,120,120,0.6)',
+      line:{ color:'red', width:2, shape: straight ? 'hv' : 'linear' }, marker:{ size:8 },
+      hoverinfo:'text', hovertext: hover
+  };
+
+    const yMaxInt = Math.ceil(balancedMax);
+    const yStep = (yMaxInt <= 50) ? 5 : 10;
+    const yTopTick = Math.ceil(yMaxInt / yStep) * yStep;
+    const yTickvals = [];
+    for (let v = -yTopTick; v <= yTopTick; v += yStep) yTickvals.push(v);
+    const yTicktext = yTickvals.map(v => String(Math.abs(v)));
+
+    const layout = {
+      title:'Indexograma',
+      xaxis:{ title:'Compassos (tempo)', tickmode:'array', tickvals:xTickvals, ticktext:xTicktext, showgrid:true, zeroline:false, showline:true, mirror:true, linecolor:'black', linewidth:1 },
+      yaxis:{ title:'<-- Aglom.|Disper. -->', range:yRange, tickmode:'array', tickvals:yTickvals, ticktext:yTicktext, zeroline:true, zerolinecolor:'black', zerolinewidth:2, showgrid:true, showline:true, mirror:true, linecolor:'black', linewidth:1 },
+      margin:{ l:50, r:50, b:50, t:90 }, showlegend:false, height:400,
+      shapes:[{ type:'line', x0:x[0], x1:x[x.length-1], y0:0, y1:0, xref:'x', yref:'y', line:{ color:'black', width:2 } }],
+      annotations
+    };
+
+    Plotly.newPlot(el, [traceDispersion, traceAgglomeration], layout, {
+      responsive:true, displaylogo:false,
+      modeBarButtonsToAdd: [
+        { name:'Download PNG',  icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'png',  filename:'indexograma_png'}) },
+        { name:'Download SVG',  icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'svg',  filename:'indexograma_svg'}) },
+        { name:'Download JPEG', icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'jpeg', filename:'indexograma_jpeg'}) }
+      ]
+    }).then(() => setTimeout(() => Plotly.Plots.resize(el), 0));
+  }
+
+function plotTransformationsInto(el){
+  const straight = document.getElementById('stepLines')?.checked;
+
+  const states = getDistinctStates();
+  if (states.length < 2) {
+    el.innerHTML = '<div class="muted">Sem dados suficientes.</div>';
+    return;
+  }
+// Texto base do hover para cada transição (mostra A → B)
+const hoverAB = states.slice(0, -1).map((_, i) => {
+  const A = formatPartition(states[i].part);
+  const B = formatPartition(states[i + 1].part);
+  return `Partições: ${A} → ${B}`;
+});
+  // transições A -> B
+  const times = [];
+  const stepsCats = []; // array de arrays, cada transição pode ter 1..2 categorias
+  for (let i=0; i<states.length-1; i++){
+    const A = states[i].part, B = states[i+1].part;
+    const cats = inferTransformSet(A, B);
+    stepsCats.push(cats);
+    times.push(ticksToBeats(states[i+1].t)); // tempo do alvo
+  }
+
+  // construir "caminhos" para bifurcações (linhas sobrepostas)
+  const idx = c => TRANSF_ORDER.indexOf(c);
+  let paths = [ [] ]; // cada path é um array de y por step
+
+  for (let i=0; i<stepsCats.length; i++){
+    const cats = stepsCats[i];
+
+    if (cats.length <= 1){
+      const y = idx(cats[0]);
+      for (const p of paths) p[i] = y;
+    } else {
+      // bifurcação: primeira categoria prolonga paths existentes;
+      // demais categorias criam clones que divergem neste step
+      const y0 = idx(cats[0]);
+      for (const p of paths) p[i] = y0;
+
+      for (let k=1; k<cats.length; k++){
+        const clone = paths[0].slice(0, i); // histórico até o passo anterior
+        clone[i] = idx(cats[k]);
+        paths.push(clone);
+      }
+    }
+  }
+
+  // criar traces
+const traces = paths.map((p, pi) => {
+  const hoverText = times.map((_, i) => hoverAB[i] + '<br>Transf.: ' + TRANSF_ORDER[p[i]]);
+  return {
+    x: times,
+    y: p,
+    type: 'scatter',
+    mode: 'lines+markers',
+    line: { shape: straight ? 'hv' : 'linear' },
+    showlegend: false,
+    hoverinfo: 'text',
+    hovertext: hoverText
+  };
+});
+
+  // eixos (compassos reais no X)
+  const totalMeasures = measureStartsTicks.length;
+  const xTickvalsAll = measureStartsTicks.map(t => ticksToBeats(t));
+  const tickStep = totalMeasures <= 50 ? 1 : (totalMeasures <= 100 ? 5 : 10);
+  const xTickvals = xTickvalsAll.filter((_, i) => (i % tickStep) === 0);
+  const xTicktext = xTickvals.map((_, i) => String(i * tickStep + 1));
+
+  const layout = {
+    title: 'Gráfico de Transformações',
+    xaxis: {
+      title: 'Compassos (tempo)',
+      tickmode: 'array', tickvals: xTickvals, ticktext: xTicktext,
+      showgrid: true, showline: true, mirror: true, linecolor: 'black'
+    },
+    yaxis: {
+      title: 'Transformação',
+      tickmode: 'array',
+      tickvals: TRANSF_ORDER.map((_, i) => i),
+      ticktext: TRANSF_ORDER,
+      range: [-0.5, TRANSF_ORDER.length - 0.5],
+      showgrid: true, showline: true, mirror: true, linecolor: 'black'
+    },
+    margin: { t: 40, l: 70, r: 30, b: 50 },
+    showlegend: false
+  };
+
+  Plotly.newPlot(el, traces, layout, {
+    responsive: true,
+    displaylogo: false,
+    modeBarButtonsToAdd: [
+      { name:'Download PNG',  icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'png',  filename:'grafico_transformacoes_png'}) },
+      { name:'Download SVG',  icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'svg',  filename:'grafico_transformacoes_svg'}) },
+      { name:'Download JPEG', icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'jpeg', filename:'grafico_transformacoes_jpeg'}) },
+      { name:'Download PDF',  icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'pdf',  filename:'grafico_transformacoes_pdf'}) }
+    ]
+  }).then(() => setTimeout(() => Plotly.Plots.resize(el), 0));
+}
+
+
+function plotTexturalClassesInto(el) {
+  const straight = document.getElementById('stepLines')?.checked;
+
+  if (!lastRows.length) { 
+    el.innerHTML = '<div class="muted">Sem dados.</div>'; 
+    return; 
+  }
+
+  const x = lastRows.map(r => ticksToBeats(r.t));
+  const yLabels = lastRows.map(r => classifyPartition(r.partition));
+  const y = yLabels.map(lbl => CLASSES_ORDER.indexOf(lbl));
+
+  const totalMeasures = measureStartsTicks.length;
+  const xTickvalsAll = measureStartsTicks.map(t => ticksToBeats(t));
+  const tickStep = totalMeasures <= 50 ? 1 : (totalMeasures <= 100 ? 5 : 10);
+  const xTickvals = xTickvalsAll.filter((_, i) => (i % tickStep) === 0);
+  const xTicktext = xTickvals.map((_, i) => String(i * tickStep + 1));
+
+  const trace = {
+    x, y,
+    type: 'scatter',
+    mode: 'lines+markers',
+    line: { shape: straight ? 'hv' : 'linear' }
+  };
+
+  const layout = {
+    title: 'Gráfico de Classes Texturais',
+    xaxis: {
+      title: 'Compassos (tempo)',
+      tickmode: 'array',
+      tickvals: xTickvals,
+      ticktext: xTicktext,
+      showgrid: true, showline: true, mirror: true, linecolor: 'black'
+    },
+    yaxis: {
+      title: 'Classe Textural',
+      tickmode: 'array',
+      tickvals: CLASSES_ORDER.map((_, i) => i),
+      ticktext: CLASSES_ORDER,
+      range: [-0.5, CLASSES_ORDER.length - 0.5],
+      showgrid: true, showline: true, mirror: true, linecolor: 'black'
+    },
+    margin: { t: 40, l: 60, r: 30, b: 50 },
+    showlegend: false
+  };
+
+  Plotly.newPlot(el, [trace], layout, {
+    responsive: true,
+    displaylogo: false,
+    modeBarButtonsToAdd: [
+      { name:'Download PNG',  icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'png',  filename:'classes_texturais_png'}) },
+      { name:'Download SVG',  icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'svg',  filename:'classes_texturais_svg'}) },
+      { name:'Download JPEG', icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'jpeg', filename:'classes_texturais_jpeg'}) },
+      { name:'Download PDF',  icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'pdf',  filename:'classes_texturais_pdf'}) }
+    ]
+  }).then(() => setTimeout(() => Plotly.Plots.resize(el), 0));
+}
+
+
+function plotHistRecorrenciasInto(el){
+  if (!lastRows || !lastRows.length) { el.innerHTML = '<div class="muted">Sem dados.</div>'; return; }
+
+  // sequência compacta (ignora repetições laterais)
+  const counts = new Map();
+  let lastSig = null;
+  for (const r of lastRows) {
+    const sig = JSON.stringify(r.partition);
+    if (sig !== lastSig) {
+      const label = partitionLabelForCharts(r.partition);
+      counts.set(label, (counts.get(label) || 0) + 1);
+      lastSig = sig;
+    }
+  }
+
+  const entries = Array.from(counts.entries())
+    .sort((a,b)=> (b[1]-a[1]) || a[0].localeCompare(b[0])); // desc por contagem
+
+  if (!entries.length){ el.innerHTML = '<div class="muted">Sem dados.</div>'; return; }
+
+  const x = entries.map(([k]) => k);
+  const y = entries.map(([,v]) => v);
+
+  const trace = { type:'bar', x, y, text:y.map(String), textposition:'auto' };
+  const layout = {
+    title: 'Histograma de Recorrências (sem repetições laterais)',
+    xaxis: { title:'Partições', automargin:true },
+    yaxis: { title:'Ocorrências', rangemode:'tozero' },
+    margin:{ t:50, l:50, r:20, b:80 }
+  };
+  Plotly.newPlot(el, [trace], layout, {
+  responsive: true,
+  displaylogo: false,
+  modeBarButtonsToAdd: [
+    { name: 'Download PNG',  icon: Plotly.Icons.camera, click: gd => Plotly.downloadImage(gd, { format:'png',  filename:'hist_recorrencias_png'  }) },
+    { name: 'Download SVG',  icon: Plotly.Icons.camera, click: gd => Plotly.downloadImage(gd, { format:'svg',  filename:'hist_recorrencias_svg'  }) },
+    { name: 'Download JPEG', icon: Plotly.Icons.camera, click: gd => Plotly.downloadImage(gd, { format:'jpeg', filename:'hist_recorrencias_jpeg' }) },
+    { name: 'Download PDF',  icon: Plotly.Icons.camera, click: gd => Plotly.downloadImage(gd, { format:'pdf',  filename:'hist_recorrencias_pdf'  }) }
+  ]
+}).then(() => setTimeout(() => Plotly.Plots.resize(el), 0));
+
+}
+
+function plotHistTempoInto(el){
+  if (!lastRows || !lastRows.length) { el.innerHTML = '<div class="muted">Sem dados.</div>'; return; }
+
+  const endTick = measureEndsTicks[measureEndsTicks.length - 1];
+  const dur = new Map(); // label → segundos acumulados
+
+  for (let i=0; i<lastRows.length; i++){
+    const cur = lastRows[i];
+    const t0  = cur.t;
+    const t1  = (i+1 < lastRows.length) ? lastRows[i+1].t : endTick;
+    if (t1 <= t0) continue;
+
+    const label = partitionLabelForCharts(cur.partition);
+    const secs  = ticksRangeToSeconds(t0, t1);
+    dur.set(label, (dur.get(label) || 0) + secs);
+  }
+
+  const entries = Array.from(dur.entries())
+    .sort((a,b)=> (b[1]-a[1]) || a[0].localeCompare(b[0])); // desc por duração
+
+  if (!entries.length){ el.innerHTML = '<div class="muted">Sem dados.</div>'; return; }
+
+  const x = entries.map(([k]) => k);
+  const y = entries.map(([,v]) => v);
+  const text = y.map(v => v.toFixed(2) + 's');
+
+  const trace = { type:'bar', x, y, text, textposition:'auto' };
+  const layout = {
+    title: 'Histograma (Tempo) — duração total por partição',
+    xaxis: { title:'Partições', automargin:true },
+    yaxis: { title:'Duração (s)', rangemode:'tozero' },
+    margin:{ t:50, l:60, r:20, b:80 }
+  };
+  Plotly.newPlot(el, [trace], layout, {
+  responsive: true,
+  displaylogo: false,
+  modeBarButtonsToAdd: [
+    { name: 'Download PNG',  icon: Plotly.Icons.camera, click: gd => Plotly.downloadImage(gd, { format:'png',  filename:'hist_tempo_png'  }) },
+    { name: 'Download SVG',  icon: Plotly.Icons.camera, click: gd => Plotly.downloadImage(gd, { format:'svg',  filename:'hist_tempo_svg'  }) },
+    { name: 'Download JPEG', icon: Plotly.Icons.camera, click: gd => Plotly.downloadImage(gd, { format:'jpeg', filename:'hist_tempo_jpeg' }) },
+    { name: 'Download PDF',  icon: Plotly.Icons.camera, click: gd => Plotly.downloadImage(gd, { format:'pdf',  filename:'hist_tempo_pdf'  }) }
+  ]
+}).then(() => setTimeout(() => Plotly.Plots.resize(el), 0));
+
+}
+
+
+  // ======= Sequência (distinta) p/ grafo =======
+  function getPartitionSequenceDistinct() {
+    if (!lastRows || !lastRows.length) return [];
+    const seq = [];
+    let lastSig = null;
+    for (const r of lastRows) {
+      const sig = JSON.stringify(r.partition);
+      if (sig !== lastSig) {
+        const html = formatPartition(r.partition);
+        const label = normalizePartitionLabel(html);
+        seq.push(label);
+        lastSig = sig;
+      }
+    }
+    return seq;
+  }
+
+  // ======= Grafo (Cytoscape) no container dado =======
+  function gerarGrafoDeParticoesInto(cyContainer, buttonsContainer) {
+    const seq = getPartitionSequenceDistinct();
+    if (!seq.length) { cyContainer.innerHTML = '<div class="muted">Nenhuma partição disponível.</div>'; return; }
+
+    if (window.cy) { try { window.cy.destroy(); } catch(_) {} }
+    window.cy = null;
+
+    const idByLabel = new Map();
+    const ensureId = (label) => {
+      if (idByLabel.has(label)) return idByLabel.get(label);
+      const id = 'n' + idByLabel.size;
+      idByLabel.set(label, id);
+      return id;
+    };
+
+    const nodeSet = new Set(seq);
+    const nodes = Array.from(nodeSet).map(label => ({ data: { id: ensureId(label), label } }));
+
+    const edgeMap = new Map();
+    for (let i = 0; i < seq.length - 1; i++) {
+      const a = seq[i], b = seq[i + 1];
+      if (a === b) continue;
+      const k = `${a}->${b}`, kr = `${b}->${a}`;
+      if (edgeMap.has(kr)) edgeMap.set(kr, 'both');
+      else if (!edgeMap.has(k)) edgeMap.set(k, 'forward');
+    }
+    const edges = [];
+    let ei = 0;
+    edgeMap.forEach((dir, k) => {
+      const [sLabel, tLabel] = k.split('->');
+      const s = ensureId(sLabel);
+      const t = ensureId(tLabel);
+      const e = { data: { id: `e${ei++}`, source: s, target: t } };
+      if (dir === 'both') e.data.bidirectional = true;
+      edges.push(e);
+    });
+
+    const cy = cytoscape({
+      container: cyContainer,
+      elements: [...nodes, ...edges],
+      style: [
+        { selector: 'node',
+          style: {
+            'background-color':'#FF6100',
+            'label':'data(label)', 'color':'#fff',
+            'text-valign':'center', 'text-halign':'center',
+            'font-weight':'bold', 'font-size':'12px',
+            'shape':'ellipse', 'width': 60, 'height':60
+          }
+        },
+        { selector: 'edge',
+          style: {
+            'width':2, 'line-color':'#000',
+            'target-arrow-color':'#000',
+            'target-arrow-shape':'triangle',
+            'curve-style':'bezier'
+          }
+        },
+        { selector: 'edge[bidirectional]',
+          style: { 'source-arrow-shape':'triangle', 'source-arrow-color':'#000' }
+        }
+      ],
+      layout: { name: 'cose', animate: true }
+    });
+
+    window.cy = cy;
+    setTimeout(() => { cy.resize(); cy.fit(); }, 0);
+
+    // botões de download dentro do dock
+    buttonsContainer.innerHTML = '';
+    const btnPng = document.createElement('button');
+    btnPng.textContent = 'Baixar grafo (PNG)';
+    btnPng.onclick = () => {
+      const png64 = cy.png({full:true});
+      const a = document.createElement('a');
+      a.href = png64; a.download = `grafo_particoes_${new Date().toISOString().slice(0,10)}.png`; a.click();
+    };
+    const btnSvg = document.createElement('button');
+    btnSvg.textContent = 'Baixar grafo (SVG)';
+    btnSvg.onclick = () => {
+      if (!cy.svg) { alert('Para exportar SVG, inclua o plugin cytoscape-svg.'); return; }
+      const svgText = cy.svg({full:true});
+      const blob = new Blob([svgText], {type:'image/svg+xml;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `grafo_particoes_${new Date().toISOString().slice(0,10)}.svg`; a.click();
+      URL.revokeObjectURL(url);
+    };
+    buttonsContainer.style.display = 'flex';
+    buttonsContainer.style.gap = '8px';
+    buttonsContainer.appendChild(btnPng);
+    buttonsContainer.appendChild(btnSvg);
+  }
+
+// gera nós/arestas em círculo com: círculo-fundo, pinos na borda e labels fora
+function buildClassCircleElementsV2(seq, w, h) {
+  const CLASS_ORDER = ['[LB]','[B]','[Bʸ]','[LBʸ]','[LˣBʸ]','[LˣB]','[Lˣ]','[L]'];
+     const CLASS_ANGLE = { '[LB]':90,'[B]':45,'[Bʸ]':0,'[LBʸ]':315,'[LˣBʸ]':270,'[LˣB]':225,'[Lˣ]':180,'[L]':135 };
+
+  const cx = w/2, cy = h/2;
+  const R  = Math.min(w,h) * 0.36;    // raio do círculo (pinos na borda)
+  const Rlbl = R + 26;                 // raio dos labels (fora do círculo)
+
+  const toPos = (deg, r) => {
+    const t = (deg*Math.PI)/180;
+    return { x: cx + r*Math.cos(t), y: cy - r*Math.sin(t) };
+  };
+
+  // círculo de fundo (grande node só com borda)
+  const nodes = [{
+    data:{ id:'__circle__' },
+    position:{ x:cx, y:cy },
+    selectable:false, grabbable:false, locked:true
+  }];
+
+  // pinos + labels (2 nós por classe)
+  for (const c of CLASS_ORDER) {
+    const a = CLASS_ANGLE[c];
+    const pPin = toPos(a, R);
+    const pLbl = toPos(a, Rlbl);
+
+    nodes.push(
+      { // pino na borda
+        data:{ id:`pin_${c}`, kind:'pin', label:c },
+        position:pPin, selectable:false, grabbable:false, locked:true
+      },
+      { // label fora do círculo (node "transparente" só com texto)
+        data:{ id:`lbl_${c}`, kind:'label', label:c },
+        position:pLbl, selectable:false, grabbable:false, locked:true
+      }
+    );
+  }
+
+  // contagem de transições (sem repetições laterais)
+  const classesSeq = getClassSeqDistinct().filter(c => CLASS_ANGLE[c] !== undefined);
+  const used = new Map(); // "A->B" => n
+  for (let i=0;i<classesSeq.length-1;i++){
+    const a = classesSeq[i], b = classesSeq[i+1];
+    if (a===b) continue;
+    used.set(`${a}->${b}`, (used.get(`${a}->${b}`)||0)+1);
+  }
+
+  // arestas: TODAS as ordenadas (exceto self), colorindo por uso
+  const edges = [];
+  let ei = 0;
+  for (const s of CLASS_ORDER){
+    for (const t of CLASS_ORDER){
+      if (s===t) continue;
+      const k = `${s}->${t}`;
+      const n = used.get(k) || 0;
+      edges.push({
+        data:{ id:`e${ei++}`, source:`pin_${s}`, target:`pin_${t}`, w:n, used:(n>0)?1:0 }
+      });
+    }
+  }
+
+  return { nodes, edges };
+}
+function showClassCircularMap() {
+  const dock = clearDock();
+  const cyBox = freshDiv(dock, 560);
+  const btnBox = document.createElement('div');
+  dock.appendChild(btnBox);
+
+  // dimensões
+  const w = cyBox.clientWidth || 720;
+  const h = cyBox.clientHeight || 560;
+
+  // constroi elementos
+  const { nodes, edges } = buildClassCircleElementsV2(getClassSeqDistinct(), w, h);
+
+  if (window.cy) { try { window.cy.destroy(); } catch(_) {} }
+  const cy = cytoscape({
+    container: cyBox,
+    elements: [...nodes, ...edges],
+    layout: { name:'preset' }, // usamos as posições calculadas
+    style: [
+      // círculo de fundo
+      { selector: 'node#__circle__',
+        style: {
+          'shape':'ellipse','width': Math.min(w,h)*0.78,'height': Math.min(w,h)*0.78,
+          'background-opacity':0,'border-width':2,'border-color':'#bbb'
+        }
+      },
+      // pinos na borda
+      { selector: 'node[kind = "pin"]',
+        style: {
+          'shape':'ellipse','width':10,'height':10,
+          'background-color':'#111','border-width':0,'label':'',
+        }
+      },
+      // labels fora do círculo
+      { selector: 'node[kind = "label"]',
+        style: {
+          'background-opacity':0,'border-width':0,
+          'label':'data(label)','font-weight':'700','color':'#111',
+          'text-valign':'center','text-halign':'center','font-size':'12px'
+        }
+      },
+      // arestas NÃO usadas (todas possíveis)
+      { selector: 'edge[used = 0]',
+        style: {
+          'curve-style':'straight','line-color':'#bbb','opacity':0.18,'width':1,
+          'target-arrow-shape':'triangle','target-arrow-color':'#bbb'
+        }
+      },
+      // arestas usadas (destacadas)
+      { selector: 'edge[used > 0]',
+        style: {
+          'curve-style':'straight','line-color':'#FF6100','opacity':0.95,
+          'target-arrow-shape':'triangle','target-arrow-color':'#FF6100',
+          'width':'mapData(w, 1, 10, 2, 8)'  // grossura ~ contagem (satura em 10)
+        }
+      }
+    ]
+  });
+
+  window.cy = cy;
+  setTimeout(() => { cy.resize(); cy.fit(); }, 0);
+
+  // botões de download
+  btnBox.innerHTML = '';
+  const btnPng = document.createElement('button');
+  btnPng.textContent = 'Baixar mapa (PNG)';
+  btnPng.onclick = () => {
+    const png64 = cy.png({full:true});
+    const a = document.createElement('a');
+    a.href = png64; a.download = `mapa_classes_circular_${new Date().toISOString().slice(0,10)}.png`; a.click();
+  };
+  const btnSvg = document.createElement('button');
+  btnSvg.textContent = 'Baixar mapa (SVG)';
+  btnSvg.onclick = () => {
+    if (!cy.svg) { alert('Para exportar SVG, inclua o plugin cytoscape-svg.'); return; }
+    const svgText = cy.svg({full:true});
+    const blob = new Blob([svgText], {type:'image/svg+xml;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `mapa_classes_circular_${new Date().toISOString().slice(0,10)}.svg`; a.click();
+    URL.revokeObjectURL(url);
+  };
+  btnBox.style.display = 'flex';
+  btnBox.style.gap = '8px';
+  btnBox.appendChild(btnPng);
+  btnBox.appendChild(btnSvg);
+}
+
+  // ======= Views (SEM mover DOM) =======
+
+
+// === Particiograma: grafo de partições usadas, com setas e espessura ~ frequência ===
+// Helpers: gera TODAS as partições de 1..N
+function _partitionsOf(n, maxPart = n, prefix = [], out = []) {
+  if (n === 0) { out.push(prefix.slice().sort((a,b)=>a-b)); return out; }
+  for (let k = Math.min(maxPart, n); k >= 1; k--) {
+    prefix.push(k);
+    _partitionsOf(n - k, k, prefix, out);
+    prefix.pop();
+  }
+  return out;
+}
+function _allPartitionsUpTo(n){
+  const out = [];
+  for (let k = 1; k <= n; k++) _partitionsOf(k, k, [], out);
+  return out;
+}
+// label unicode "[1²3]" p/ texto/hover
+function _label(part){
+  const html = formatPartition(part);
+  return "[" + normalizePartitionLabel(html) + "]";
+}
+
+function showParticiograma(){
+  const dock = clearDock();
+  const box  = freshDiv(dock, 520);
+
+  // ====== AJUSTES RÁPIDOS ======
+const PAD_X = 0.6;  // esquerda/direita
+const PAD_Y = 1.0;  // base/topo (aumente aqui p/ dar mais espaço na base)
+
+  const ARROW_W          = 1.1;     // espessura da seta (px)
+  const NODE_OFF         = 0.28;    // quanto a seta “desgruda” do ponto de origem e do alvo
+  const COUNT_T          = 0.60;    // posição do número ao longo da seta (0=na origem, 1=na ponta)
+  const COUNT_PERP       = 0.00;    // deslocamento perpendicular do número (evita encostar na seta)
+  const COUNT_FONT_SIZE  = 12;      // tamanho do número
+  const COUNT_FONT_COLOR = '#FF6100';
+  const COUNT_FONT_WGHT  = 900;
+  const LEFT_GAP         = 0.15;    // deslocamento horizontal padrão p/ “início”/“fim” (à ESQUERDA)
+  const RIGHT_GAP        = 0.15;    // deslocamento horizontal se a partição for [1] (à DIREITA)
+  const START_END_Y_SHIFT= -0.15;   // deslocamento vertical de “início”/“fim”
+ const COUNT_TIP_PAD = 0.60;
+ const NODE_OFF_SRC = 0.15;  // afastamento na origem
+ const NODE_OFF_DST = 0.15;  // afastamento no alvo (pode ser diferente)
+
+
+  // ===== estados distintos =====
+  const states = getDistinctStates(); // [{t, part:[...]}]
+  if (!states.length){
+    box.innerHTML = '<div class="muted">Sem dados.</div>';
+    return;
+  }
+
+  // DN máxima observada
+  const maxDN = states.reduce((m,s)=> Math.max(m, s.part.reduce((a,b)=>a+b,0)), 0) || 1;
+
+  // gera TODAS as partições de 1..maxDN
+  const allParts = (function genAll(n){
+    const out = [];
+    function gen(rem, maxPart, pref){
+      if (rem===0){ out.push(pref.slice().sort((a,b)=>a-b)); return; }
+      for (let k=Math.min(maxPart,rem); k>=1; k--){ pref.push(k); gen(rem-k,k,pref); pref.pop(); }
+    }
+    for (let s=1; s<=n; s++) gen(s,s,[]);
+    return out;
+  })(maxDN);
+
+  // utilitários
+  const keyAD  = (ag,di)=> `${ag},${di}`;
+  const rotulo = (part)=> "[" + normalizePartitionLabel(formatPartition(part)) + "]";
+  const isPartOne = (p)=> p && p.length===1 && p[0]===1;
+
+  // mapa de TODOS os pontos (todas as partições 1..DN)
+  const grid = new Map(); // "ag,di" -> { ag, di, parts:[labels] }
+  for (const P of allParts){
+    const { dispersao:di, aglomeracao:ag } = calcDispersaoAglomeracao(P);
+    const k = keyAD(ag,di);
+    if (!grid.has(k)) grid.set(k, { ag, di, parts:[] });
+    grid.get(k).parts.push(rotulo(P));
+  }
+  grid.forEach(g => g.parts = Array.from(new Set(g.parts)).sort((a,b)=>a.localeCompare(b,'pt-BR')));
+
+  // marcar pontos USADOS na música
+  const usedKeySet = new Set();
+  for (const s of states){
+    const { dispersao:di, aglomeracao:ag } = calcDispersaoAglomeracao(s.part);
+    usedKeySet.add(keyAD(ag,di));
+  }
+
+  // scatter de TODOS os pontos (cinza)
+  const xAll=[], yAll=[], textAll=[], hoverAll=[];
+  grid.forEach(g=>{
+    xAll.push(g.ag); yAll.push(g.di);
+    textAll.push(g.parts.length>1 ? `${g.parts.length} partições` : g.parts[0]);
+    hoverAll.push(
+      `Aglomeração: ${g.ag}<br>Dispersão: ${g.di}<br>Partições:<br>${g.parts.join('<br>')}`
+    );
+  });
+
+  // destaque dos USADOS (círculo laranja aberto)
+  const xUsed=[], yUsed=[];
+  grid.forEach(g=>{ if (usedKeySet.has(keyAD(g.ag,g.di))) { xUsed.push(g.ag); yUsed.push(g.di); } });
+
+  // contagem de transições (A->B) AGREGADA por par de coordenadas
+  const coordKeyOf = (part)=> {
+    const { dispersao:di, aglomeracao:ag } = calcDispersaoAglomeracao(part);
+    return keyAD(ag,di);
+  };
+  const transCounts = new Map(); // "kA->kB" -> n
+  for (let i=0; i<states.length-1; i++){
+    const kA = coordKeyOf(states[i].part), kB = coordKeyOf(states[i+1].part);
+    if (kA===kB) continue;
+    const kk = `${kA}->${kB}`;
+    transCounts.set(kk, (transCounts.get(kk)||0) + 1);
+  }
+
+  // geometria p/ setas
+  const byKey = new Map(); grid.forEach(g=>byKey.set(keyAD(g.ag,g.di), g));
+ // Encosta a seta com afastamentos independentes na origem e no alvo
+function offsetEnds(ax, ay, bx, by, offS, offT){
+  const dx = bx - ax, dy = by - ay;
+  const len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len,  uy = dy / len;  // vetor unitário
+
+  return {
+    sx: ax + ux * offS,
+    sy: ay + uy * offS,
+    tx: bx - ux * offT,
+    ty: by - uy * offT,
+    ux, uy, len
+  };
+}
+
+
+  const annotations = []; // setas + números + início/fim
+
+  // desenha CADA par A->B (uma seta por par) + número no FINAL
+  for (const [kk, c] of transCounts.entries()){
+    const [kA, kB] = kk.split('->');
+    const A = byKey.get(kA), B = byKey.get(kB);
+    if (!A || !B) continue;
+
+    const { sx,sy, tx,ty, ux,uy, len } = offsetEnds(A.ag,A.di, B.ag,B.di, NODE_OFF_SRC, NODE_OFF_DST);
+
+
+    // seta reta (ponta no alvo)
+    annotations.push({
+      x: tx, y: ty, xref:'x', yref:'y',
+      ax: sx, ay: sy, axref:'x', ayref:'y',
+      showarrow:true, arrowhead:4, arrowsize:1.5, arrowwidth:ARROW_W, arrowcolor:'#111',
+      opacity:0.95
+    });
+
+    // número no FINAL da seta (ligeiramente antes da ponta + desvio perpendicular)
+// --- POSIÇÃO DO NÚMERO (sobre a seta e antes da ponta) ---
+const tipPad = COUNT_TIP_PAD;                        // “margem” antes da ponta
+const t = Math.max(0, Math.min(1, (len - tipPad) / len));
+// projeção ao longo da seta (sem deslocamento perpendicular)
+const cx = sx + ux * (t * len) + (-uy) * COUNT_PERP; // COUNT_PERP=0 => em cima da linha
+const cy = sy + uy * (t * len) + ( ux) * COUNT_PERP;
+
+    annotations.push({
+      x: cx, y: cy, xref:'x', yref:'y', showarrow:false,
+      text: `<span style="font-weight:${COUNT_FONT_WGHT}; color:${COUNT_FONT_COLOR}; font-size:${COUNT_FONT_SIZE}px">${c}</span>`,
+      xanchor:'center', yanchor:'middle',
+      bgcolor:'rgba(255,255,255,0)', bordercolor:'rgba(0,0,0,0)', borderwidth:0, borderpad:0
+    });
+  }
+
+  // rótulos “início” e “fim” (esquerda por padrão; à DIREITA se a partição for [1])
+  const firstPart = states[0].part;
+  const lastPart  = states[states.length-1].part;
+
+  const firstKey = coordKeyOf(firstPart);
+  const lastKey  = coordKeyOf(lastPart);
+  const first = byKey.get(firstKey), last = byKey.get(lastKey);
+
+  if (first){
+    const toRight = isPartOne(firstPart);
+    annotations.push({
+      x: first.ag + (toRight ?  RIGHT_GAP : -LEFT_GAP),
+      y: first.di + START_END_Y_SHIFT,
+      xref:'x', yref:'y', showarrow:false, text:'Start',
+      xanchor: toRight ? 'left' : 'right',
+      yanchor:'middle',
+      font:{size:10, family:'Saira, sans-serif', color:'#111'},
+      bgcolor:'#fff', bordercolor:'#999', borderwidth:1, opacity:0.98
+    });
+  }
+  if (last){
+    const toRight = isPartOne(lastPart);
+    annotations.push({
+      x: last.ag + (toRight ?  RIGHT_GAP : -LEFT_GAP),
+      y: last.di + START_END_Y_SHIFT,
+      xref:'x', yref:'y', showarrow:false, text:'End',
+      xanchor: toRight ? 'left' : 'right',
+      yanchor:'middle',
+      font:{size:10, family:'Saira, sans-serif', color:'#111'},
+      bgcolor:'#fff', bordercolor:'#999', borderwidth:1, opacity:0.98
+    });
+  }
+
+  // limites e ticks inteiros (0..lim) com "respiro" interno sem ticks negativos
+  const lim = (maxDN * (maxDN - 1)) / 2;        // Comb(maxDN,2)
+  const intTicks = Array.from({length: lim + 1}, (_, i) => i); // 0..lim
+
+  const traceBase = {
+    x:xAll, y:yAll, type:'scatter', mode:'markers+text',
+    text:textAll, textposition:'top right',
+    marker:{ size:10, color:'#bbb' },
+    hoverinfo:'text', hovertext:hoverAll,
+    name:'Partições (1…DN)'
+  };
+  const traceUsadas = {
+    x:xUsed, y:yUsed, type:'scatter', mode:'markers',
+    marker:{ size:16, color:'#FF6100', line:{width:2, color:'#FF6100'}, symbol:'circle-open' },
+    hoverinfo:'skip', name:'Usadas'
+  };
+
+  const layout = {
+    title: 'Particiograma',
+    xaxis: {
+      title: 'Aglomeração',
+      showgrid: true, zeroline: false, showline: true, linecolor: 'black', linewidth: 1,
+      range: [-PAD_X, lim + PAD_X],                    // “respiro” interno
+      tickmode: 'array', tickvals: intTicks,       // mostra apenas 0..lim
+      ticktext: intTicks.map(String)
+    },
+    yaxis: {
+      title: 'Dispersão',
+      showline: true, linecolor: 'black', linewidth: 1, zeroline: false,
+      range: [-PAD_Y, lim + PAD_Y],                    // “respiro” interno
+      tickmode: 'array', tickvals: intTicks,       // mostra apenas 0..lim
+      ticktext: intTicks.map(String)
+    },
+    margin: { l: 40, r: 40, b: 40, t: 40 },
+    shapes: [
+      { type: 'rect', xref: 'paper', yref: 'paper', x0: 0, y0: 0, x1: 1, y1: 1, line: { color: 'black', width: 2 } }
+    ],
+    annotations,
+    width: 1000,
+    showlegend: false
+  };
+
+  Plotly.newPlot(box, [traceBase, traceUsadas], layout, {
+    responsive: true, displaylogo: false,
+    modeBarButtonsToAdd: [
+      { name:'Download PNG',  icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'png',  filename:'particiograma_png'}) },
+      { name:'Download JPEG', icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'jpeg', filename:'particiograma_jpeg'}) },
+      { name:'Download SVG',  icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'svg',  filename:'particiograma_svg'}) },
+      { name:'Download PDF',  icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'pdf',  filename:'particiograma_pdf'}) }
+    ]
+  }).then(()=>setTimeout(()=>Plotly.Plots.resize(box),0));
+}
+
+
+  function showDNTable() {
+    const dock = clearDock();
+    const box = freshDiv(dock); // altura auto
+    renderDNTableInto(box);
+  }
+  function showDNChart() {
+    const dock = clearDock();
+    const box = freshDiv(dock, 420);
+    plotDNChartInto(box);
+  }
+  function showIndexograma() {
+    const dock = clearDock();
+    const box = freshDiv(dock, 420);
+    plotIndexogramaInto(box);
+  }
+  function showGraph() {
+    const dock = clearDock();
+    const cyBox = freshDiv(dock, 500);
+    const btnBox = document.createElement('div');
+    dock.appendChild(btnBox);
+    gerarGrafoDeParticoesInto(cyBox, btnBox);
+  }
+
+function showHistRec(){
+  const dock = clearDock();
+  const box = freshDiv(dock, 420);
+  plotHistRecorrenciasInto(box);
+}
+function showHistTempo(){
+  const dock = clearDock();
+  const box = freshDiv(dock, 420);
+  plotHistTempoInto(box);
+}
+
+function showTexturalClasses(){
+  const dock = clearDock();
+  const box  = freshDiv(dock, 420);
+
+  if (!lastRows || !lastRows.length){
+    box.innerHTML = '<div class="muted">Sem dados.</div>';
+    return;
+  }
+
+  // mapeamento classe -> nível Y (ordem fixa)
+  const idxOf = new Map(CLASSES_ORDER.map((c,i)=>[c,i]));
+
+  // série temporal (um ponto por estado registrado em lastRows)
+  const straight = document.getElementById('stepLines')?.checked;
+  const x = [];
+  const y = [];
+  const hover = [];
+
+  for (const r of lastRows){
+    const cls = classifyPartition(r.partition);         // inclui 'Pausa' se []
+    const yv  = idxOf.has(cls) ? idxOf.get(cls) : 0;    // fallback seguro
+    x.push(ticksToBeats(r.t));
+    y.push(yv);
+    hover.push(`Classe: ${cls}<br>Partição: ${formatPartitionPlain(r.partition)}`);
+  }
+
+  // eixo X por compasso
+  const totalMeasures = measureStartsTicks.length;
+  const xTickvalsAll = measureStartsTicks.map(t => ticksToBeats(t));
+  const tickStep = totalMeasures <= 50 ? 1 : (totalMeasures <= 100 ? 5 : 10);
+  const xTickvals = xTickvalsAll.filter((_,i) => (i % tickStep) === 0);
+  const xTicktext = xTickvals.map((_,i) => String(i * tickStep + 1));
+
+  const trace = {
+    x, y,
+    type: 'scatter',
+    mode: 'lines+markers',
+    line: { shape: straight ? 'hv' : 'linear' },
+    hoverinfo: 'text',
+    hovertext: hover
+  };
+
+  const layout = {
+    title: 'Classes Texturais no Tempo (inclui Pausa)',
+    xaxis: {
+      title:'Compassos (tempo)',
+      tickmode:'array', tickvals:xTickvals, ticktext:xTicktext,
+      showgrid:true, showline:true, mirror:true, linecolor:'black'
+    },
+    yaxis: {
+      title:'Classe',
+      tickmode:'array',
+      tickvals: CLASSES_ORDER.map((_,i)=>i),
+      ticktext: CLASSES_ORDER,
+      range:[-0.5, CLASSES_ORDER.length - 0.5],
+      showgrid:true, showline:true, mirror:true, linecolor:'black'
+    },
+    margin:{ t:50, l:70, r:30, b:50 },
+    showlegend:false
+  };
+
+  Plotly.newPlot(box, [trace], layout, {
+    responsive:true, displaylogo:false,
+    modeBarButtonsToAdd: [
+      { name:'Download PNG',  icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'png',  filename:'classes_texturais_png'}) },
+      { name:'Download SVG',  icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'svg',  filename:'classes_texturais_svg'}) },
+      { name:'Download JPEG', icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'jpeg', filename:'classes_texturais_jpeg'}) },
+      { name:'Download PDF',  icon:Plotly.Icons.camera, click:gd => Plotly.downloadImage(gd, {format:'pdf',  filename:'classes_texturais_pdf'}) }
+    ]
+  }).then(() => setTimeout(() => Plotly.Plots.resize(box), 0));
+}
+
+function showTransforms(){
+  const dock = clearDock();
+  const box = freshDiv(dock, 420);
+  plotTransformationsInto(box);
+}
+
+// Mesmo trecho ativo? (cortes só se houver pausa geral real entre os tempos)
+function timesInSameActiveRun(tA, tB, segs, tol = 0){
+  const lo = Math.min(tA, tB), hi = Math.max(tA, tB);
+  // inclusivo nas bordas; tol permite “colar” micro-gaps se quiser
+  return segs.some(s => (s.t0 - tol) <= lo && hi <= (s.t1 + tol));
+}
+
+
+// --- helper: label unicode "[1²3]" a partir de um array-partição ---
+function partUnicodeLabel(part){
+  const html = formatPartition(part);                   // "[1<sup>2</sup>3]"
+  return "[" + normalizePartitionLabel(html) + "]";     // "[1²3]"
+}
+
+  // ======= Export CSV =======
+  function exportCSV() {
+    if (!lastRows.length) return;
+    const lines = [["Compasso","Posição no Compasso (beats)","Partição"]];
+    for (const r of lastRows) {
+      lines.push([r.measure, fmt2(r.posBeats), formatPartitionPlain(r.partition)]);
+    }
+    const csv = lines.map(row => row.map(v => String(v)).join(";")).join("\n");
+    download("analise_particoes.csv", csv);
+  }
+
+  // ======= Pipeline principal =======
+  async function handleFile(file) {
+  setStatus("");
+  document.getElementById("fileInfo").textContent = `Arquivo: ${file.name}`;
+
+  if (/\.(mxl)$/i.test(file.name)) {
+    setStatus("Arquivos .mxl (comprimidos) não são suportados. Exporte como .xml/.musicxml.", true);
+    return;
+  }
+
+  const text = await file.text();
+  const xml = new DOMParser().parseFromString(text, "application/xml");
+
+  if (xml.getElementsByTagName("parsererror").length) {
+    setStatus("Erro ao ler XML (parsererror). Verifique se o arquivo é MusicXML válido.", true);
+    return;
+  }
+TICKS_PER_QUARTER = computeGlobalTPQ(xml);
+
+  try {
+    buildMeasureTimelineFromFirstPart(xml);
+    buildTempoTimelineFromFirstPart(xml);
+
+    const spans = buildAllSpans(xml);
+if (!spans.length) {
+  setStatus("Nenhuma nota encontrada (apenas pausas?)", true);
+  render([]);
+  return;
+}
+
+// --- política de uníssonos + articulação ---
+const useArtic = document.getElementById('useArticulations')?.checked ?? false;
+const countUnisonsSeparately = countUnisonsEl?.checked ?? true;
+// quando NÃO contar uníssonos separadamente, colapsa por pitch+janela
+// e, se useArtic=true, também por articulação
+const spansEff = countUnisonsSeparately ? spans : dedupeUnisons(spans, useArtic);
+
+// sequência sem repetições?
+const onlyChanges = onlyChangesEl.checked;
+
+// tenta criar o worker; se não der, faz no main thread
+const w = getWorker();
+if (!w) {
+  const rows = computePartitionsIncremental(spansEff, onlyChanges, useArtic);
+  render(rows);
+  setStatus("Worker indisponível (provável execução via file://). Usei fallback.", true);
+  return;
+}
+
+w.onmessage = (ev) => {
+  if (ev.data?.ok) {
+    render(ev.data.rows);
+  } else {
+    const rows = computePartitionsIncremental(spansEff, onlyChanges);
+    render(rows);
+    setStatus(`Worker falhou (${ev.data?.error}). Usei fallback.`, true);
+  }
+};
+w.onerror = () => {
+  const rows = computePartitionsIncremental(spansEff, onlyChanges);
+  render(rows);
+  setStatus("Worker bloqueado/erro. Usei fallback.", true);
+};
+w.postMessage({
+  spans: spansEff,
+  measureStartsTicks, measureEndsTicks,
+  onlyChanges, TPQ: TICKS_PER_QUARTER, EPS: EPS_TICKS,
+includeArt: useArtic
+});
+
+
+  } catch (e) {
+    setStatus(String(e && e.message || e), true);
+    render([]);
+  }
+}
+
+
+  // ======= Init / Eventos =======
+  onlyChangesEl = document.getElementById("onlyChanges");
+  exportBtn     = document.getElementById("exportCsv");
+  statusEl      = document.getElementById("status");
+countUnisonsEl = document.getElementById("countUnisonsSeparately"); // <--- NOVO
+countUnisonsEl.addEventListener("change", () => {
+  const f = document.getElementById("fileInput").files?.[0];
+  if (f) handleFile(f);
+});
+
+
+// novo handler: baixa direto um .xls montado a partir de lastRows
+exportBtn.onclick = () => {
+  const dnRows = buildDnRowsFromLastRows();
+  if (!dnRows.length) {
+    setStatus('Sem dados DN para exportar (carregue um arquivo primeiro).', true);
+    return;
+  }
+  const html = buildDnTableHtml(dnRows);
+  const name = (__xmlOrigName || 'arquivo') + '_DN.xls';
+  download(name, html, 'application/vnd.ms-excel');
+};
+  document.getElementById("fileInput").addEventListener("change", (e) => {
+    const f = e.target.files?.[0];
+    if (f) handleFile(f);
+  });
+
+  onlyChangesEl.addEventListener("change", () => {
+    const f = document.getElementById("fileInput").files?.[0];
+    if (f) handleFile(f);
+  });
+document.getElementById('btnHistRec').addEventListener('click', showHistRec);
+document.getElementById('btnHistTempo').addEventListener('click', showHistTempo);
+document.getElementById('btnTexturalClasses')
+  .addEventListener('click', showTexturalClasses);
+document.getElementById('btnTransforms')
+  .addEventListener('click', showTransforms);
+
+  // Cria o Worker já no carregamento
+  try { worker = getWorker(); } catch (e) { /* fallback cuida depois */ }
+
+  // Botões (sem mover DOM, sempre redesenha)
+  document.getElementById('btnDN').addEventListener('click', showDNTable);
+  document.getElementById('btnDNChart').addEventListener('click', showDNChart);
+  document.getElementById('btnIndexograma').addEventListener('click', showIndexograma);
+  document.getElementById('btnGraphPartitions').addEventListener('click', showGraph);
+document.getElementById('btnClassCircle').addEventListener('click', showClassCircularMap);
+document.getElementById('btnMarkovPartitions').addEventListener('click', showMarkovTable);
+document.getElementById('btnClassBigrams').addEventListener('click', showClassBigrams);
+document.getElementById('btnTrigramHist').addEventListener('click', showTrigramHist);
+document.getElementById('btnTexturalContour').addEventListener('click', showTexturalContour);
+document.getElementById('useArticulations').addEventListener('change', () => {
+  const f = document.getElementById('fileInput').files?.[0];
+  if (f) handleFile(f);
+});
+document.getElementById('btnParticiograma').addEventListener('click', showParticiograma);
+
+// === guardar o XML original para a anotação/Download ===
+document.getElementById('fileInput').addEventListener('change', async (ev) => {
+  const f = ev.target.files && ev.target.files[0];
+  if (!f) return;
+  __xmlOrigName = (f.name || 'arquivo').replace(/\.(musicxml|xml)$/i, '') || 'arquivo';
+  const text = await f.text();
+  __xmlDocOrig = new DOMParser().parseFromString(text, 'application/xml');
+  const btn = document.getElementById('btnDownloadAnnotated');
+  if (btn) btn.disabled = false; // habilita o botão de baixar anotado
+});
+
+document.getElementById('btnDownloadAnnotated').addEventListener('click', downloadAnnotatedXml);
+
+
+document.getElementById('btnRegisterGraph').addEventListener('click', showRegisterGraph);
+
+document.getElementById('btnDensityCompression')
+  .addEventListener('click', showDensityCompression);
+
+document.getElementById('btnParsimony').onclick = showParsimonyGraph;
+
+document.getElementById('btnPitchSpace').addEventListener('click', () => {
+  try { showPitchSpace(); }
+  catch (e) { setStatus('Erro no Espaço de Alturas: ' + (e?.message || e), true); }
+});
+
+
+})();
+
+</script>
+</body>
+</html>
