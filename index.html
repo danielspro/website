@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Acordes da Escala + Grafo de Parcimônia</title>
+
+<!-- Fonte -->
+<link href="https://fonts.googleapis.com/css2?family=Saira:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<!-- Cytoscape + fcose (melhor contra sobreposição) + export SVG -->
+<script src="https://unpkg.com/cytoscape@3.28.1/dist/cytoscape.min.js"></script>
+<script src="https://unpkg.com/layout-base/layout-base.js"></script>
+<script src="https://unpkg.com/cose-base/cose-base.js"></script>
+<script src="https://unpkg.com/cytoscape-fcose/cytoscape-fcose.js"></script>
+<script src="https://unpkg.com/cytoscape-svg@2.1.1/cytoscape-svg.min.js"></script>
+
+<style>
+  :root{
+    --bg:#fff; --fg:#111; --muted:#666; --line:#e8e8e8; --err:#b00020;
+    --accent:#FF6100; --radius:10px; --content-max:1100px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:'Saira',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  .container{
+    background:#fff; padding:20px; border-radius:10px;
+    box-shadow:0 0 10px rgba(0,0,0,.1);
+    width:100%; max-width:var(--content-max); margin:16px auto !important;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  h1{margin:0 0 8px; text-align:center; font-weight:700; font-size:clamp(20px,3.3vw,28px)}
+  .sub{color:var(--muted); margin:0 0 14px; text-align:center; font-size:clamp(13px,2.2vw,16px)}
+
+  /* Linha de input */
+  .row{width:100%; display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:center}
+  .row > *{flex:1 1 auto}
+  label{font-weight:600}
+  input[type="text"]{
+    width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:8px; font-size:16px;
+  }
+
+  /* Botões 0–11 e notas */
+  .notas-buttons{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(44px,1fr));
+    gap:8px; width:100%; max-width:760px; justify-content:center;
+  }
+  .notas-buttons button, button{
+    border:none !important; border-radius:6px !important; cursor:pointer !important;
+    background:var(--accent) !important; color:#fff !important; font-weight:700 !important;
+    transition:filter .2s ease !important; white-space:nowrap !important;
+  }
+  .notas-buttons button{height:44px; font-size:16px}
+  button:hover{filter:brightness(.9)}
+  .ghost{background:#000 !important}
+
+  /* Switch (Numérico/Notas) */
+  .switch-container{display:flex !important; align-items:center !important; gap:8px; justify-content:center; margin:6px 0 2px; padding: 20px}
+  .switch-container span{font-size:clamp(14px,2vh,18px); line-height:1.2}
+  .switch{ position:relative; display:inline-block; width:64px; height:34px; margin:0 6px !important; }
+  .switch input{opacity:0; width:0; height:0}
+  .slider{ position:absolute; cursor:pointer; inset:0; background:#ccc; transition:.3s; border-radius:34px; }
+  .slider:before{
+    position:absolute; content:""; height:26px; width:26px; top:4px; left:4px;
+    background:#fff; transition:.3s; border-radius:50%;
+  }
+  input:checked + .slider{background:var(--accent)}
+  input:checked + .slider:before{transform:translateX(30px)}
+
+  /* Ações */
+  .actions{display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; width:100%; max-width:760px; margin-top:10px}
+  .actions button{padding:12px 14px; font-size:clamp(12px,2.6vw,15px)}
+  #clearBtn{background:#000 !important}
+
+  /* Painel único de visualização */
+  .panel{
+    position:relative; width:100%; max-width:var(--content-max);
+    margin-top:16px; border:1px solid var(--line); border-radius:10px; padding:10px;
+    background:#fff; min-height:120px;
+  }
+  .muted{color:var(--muted)}
+
+  /* Tabelas */
+  .table-block{margin:10px 0; border:1px solid var(--line); border-radius:10px; overflow:hidden}
+  .table-block h3{
+    margin:0; padding:10px 14px; background:#000; color:#fff; font-size:clamp(14px,2.2vw,16px)
+  }
+  .table-wrap{width:100%; overflow-x:auto}
+  table{border-collapse:collapse; width:100%; min-width:520px; font-size:clamp(14px,2vh,18px)}
+  th, td{border:1px solid #000; padding:10px; text-align:center; white-space:nowrap}
+  th{background:#000; color:#fff}
+  .cat{background:#f2f2f2; font-weight:700; text-align:center} /* centralizada */
+
+  /* Grafo */
+  .grafo{position:relative; width:100%; height:460px; border-radius:8px; overflow:hidden; background:#fff}
+  #graph{ width:100%; height:100%; border:1px solid var(--line); border-radius:8px; }
+
+  /* Legenda embutida no grafo */
+  .legend{
+    position:absolute; right:10px; top:10px; background:rgba(255,255,255,.9);
+    border:1px solid var(--line); border-radius:8px; padding:8px 10px;
+    display:flex; gap:12px; align-items:center; z-index:10; font-size:13px; color:#333;
+  }
+  .legend .item{display:flex; align-items:center; gap:6px;}
+  .swatch{ display:inline-block; min-width:18px; height:18px; border-radius:6px; border:1px solid #000; }
+  .swatch.triad{ background:#000; border-color:#000; }
+  .swatch.tetrad{ background:#FF6100; border-color:#FF6100; }
+
+  /* Nó do grafo com tamanho auto pelo rótulo */
+  .cy-node-label{ font-size:11px; font-weight:700; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Acordes possíveis na escala</h1>
+  <p class="sub">Digite a escala (classe de notas). Ex.: <b>0 2 4 5 7 9 11</b> ou <b>C D E F G A B</b></p>
+
+  <div class="row">
+    <div>
+      <label for="scaleInput">Escala (classe de notas)</label>
+      <input id="scaleInput" type="text" placeholder="Ex.: 0 2 4 5 7 9 11  (ou: C D E F G A B)">
+    </div>
+  </div>
+
+  <div class="switch-container">
+    <span>Notação Numérica</span>
+    <label class="switch">
+      <input type="checkbox" id="notationSwitch">
+      <span class="slider"></span>
+    </label>
+    <span>Notas</span>
+  </div>
+
+  <div class="notas-buttons" id="pcButtons"></div>
+
+  <div class="actions">
+    <button id="buildBtn">Gerar Tabela</button>
+    <button id="graphBtn">Grafo de Parcimônia</button>
+    <button id="downloadTableBtn" class="ghost" title="Baixar Tabela em XLS" disabled>Baixar Tabela (XLS)</button>
+    <button id="downloadGraphBtn" class="ghost" title="Salvar Grafo em SVG" disabled>Salvar Grafo (SVG)</button>
+    <button id="clearBtn">Limpar</button>
+  </div>
+
+  <!-- Painel único -->
+  <div id="vizDock" class="panel">
+    <p class="muted" id="placeholder"></p>
+  </div>
+</div>
+
+<script>
+/* ========= Notas e parsing ========= */
+const pcToSharp = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const nameToPc = {
+  'C':0,'B#':0,'C#':1,'Db':1,'D':2,'D#':3,'Eb':3,'E':4,'Fb':4,'E#':5,'F':5,'F#':6,'Gb':6,
+  'G':7,'G#':8,'Ab':8,'A':9,'A#':10,'Bb':10,'B':11,'Cb':11
+};
+
+function tokenize(str){ return str.trim().split(/[,\s;]+/).filter(Boolean); }
+function parseScale(str){
+  const toks = tokenize(str);
+  const pcs = [];
+  for(const t of toks){
+    if(/^\d+$/.test(t)){
+      const v = Number(t)%12; pcs.push((v+12)%12);
+    }else{
+      const k = t.trim();
+      const pc = nameToPc[k] ?? null;
+      if(pc===null) throw new Error(`Nota inválida: ${t}`);
+      pcs.push(pc);
+    }
+  }
+  return [...new Set(pcs)].sort((a,b)=>a-b);
+}
+function pcsToDisplay(pcs, asNotes){ return asNotes ? pcs.map(p=>pcToSharp[p]).join(' ') : pcs.join(' '); }
+
+/* ========= Modelos de acordes ========= */
+const TRIAD_TEMPLATES = [
+  {cat:'X',       suffix:'',      iv:[0,4,7]},
+  {cat:'Xm',      suffix:'m',     iv:[0,3,7]},
+  {cat:'Xm(b5)',  suffix:'m(b5)', iv:[0,3,6]},
+  {cat:'X(#5)',   suffix:'(#5)',  iv:[0,4,8]},
+];
+
+const TETRAD_TEMPLATES = [
+  {cat:'X7M',      suffix:'7M',      iv:[0,4,7,11]},
+  {cat:'X7',       suffix:'7',       iv:[0,4,7,10]},
+  {cat:'Xm7',      suffix:'m7',      iv:[0,3,7,10]},
+  {cat:'Xm7M',     suffix:'m7M',     iv:[0,3,7,11]},
+  {cat:'Xm7(b5)',  suffix:'m7(b5)',  iv:[0,3,6,10]},
+  {cat:'Xº',       suffix:'º',       iv:[0,3,6,9]},
+  {cat:'X7(#5)',   suffix:'7(#5)',   iv:[0,4,8,10]},
+  {cat:'X7M(#5)',  suffix:'7M(#5)',  iv:[0,4,8,11]},
+];
+
+/* ========= Construção de acordes dentro da escala ========= */
+function chordsInScale(scalePcs){
+  const set = new Set(scalePcs);
+  const triads = [], tetrads = [];
+  for(let root=0; root<12; root++){
+    for(const t of TRIAD_TEMPLATES){
+      const pcs = t.iv.map(x => (root+x)%12);
+      if(pcs.every(p => set.has(p))){
+        triads.push({root, pcs, cat:t.cat, label: pcToSharp[root]+t.suffix, kind:'triad'});
+      }
+    }
+    for(const t of TETRAD_TEMPLATES){
+      const pcs = t.iv.map(x => (root+x)%12);
+      if(pcs.every(p => set.has(p))){
+        tetrads.push({root, pcs, cat:t.cat, label: pcToSharp[root]+t.suffix, kind:'tetrad'});
+      }
+    }
+  }
+  return {triads, tetrads};
+}
+
+/* ========= Tabelas (categoria centralizada; sem coluna "Categoria") ========= */
+function groupByCategory(chords){
+  const map = new Map();
+  for(const c of chords){
+    if(!map.has(c.cat)) map.set(c.cat, []);
+    map.get(c.cat).push(c);
+  }
+  for(const [k,arr] of map) arr.sort((a,b)=>a.label.localeCompare(b.label));
+  return Array.from(map.entries()).sort((a,b)=>a[0].localeCompare(b[0]));
+}
+
+function makeTableBlock(title, groups, asNotes){
+  const block = document.createElement('div');
+  block.className = 'table-block';
+
+  const h = document.createElement('h3');
+  h.textContent = title;
+  block.appendChild(h);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'table-wrap';
+
+  const table = document.createElement('table');
+
+  // Cabeçalho só com 2 colunas
+  const thead = document.createElement('thead');
+  thead.innerHTML = `<tr><th>Acorde</th><th>Notas / PCs</th></tr>`;
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+
+  for(const [cat, arr] of groups){
+    // Linha da categoria (centralizada)
+    const trCat = document.createElement('tr');
+    const tdCat = document.createElement('td');
+    tdCat.className = 'cat';
+    tdCat.textContent = cat;
+    tdCat.colSpan = 2; // duas colunas apenas
+    trCat.appendChild(tdCat);
+    tbody.appendChild(trCat);
+
+    for(const chord of arr){
+      const tr = document.createElement('tr');
+      const td2 = document.createElement('td'); td2.textContent = chord.label;
+      const td3 = document.createElement('td'); td3.textContent = pcsToDisplay(chord.pcs, asNotes);
+      tr.append(td2, td3);
+      tbody.appendChild(tr);
+    }
+  }
+
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+  block.appendChild(wrap);
+  return block;
+}
+
+/* ========= Grafo ========= */
+function differAtMostOne(a, b){
+  if(a.length !== b.length) return false;
+  const sb = new Set(b);
+  let inter = 0; for(const x of a) if(sb.has(x)) inter++;
+  return (a.length - inter) <= 1;
+}
+
+let cy = null;
+function buildGraphElements(data){
+  const nodes = [];
+  const edges = [];
+  const idFor = (c,i) => `${c.kind}_${c.label}_${i}`;
+
+  data.triads.forEach((c,i)=>{
+    nodes.push({ data:{ id:idFor(c,i), label:c.label, kind:c.kind, pcs:c.pcs.join('-') }});
+  });
+  data.tetrads.forEach((c,i)=>{
+    nodes.push({ data:{ id:idFor(c,i), label:c.label, kind:c.kind, pcs:c.pcs.join('-') }});
+  });
+
+  // triads ↔ triads
+  for(let i=0;i<data.triads.length;i++){
+    for(let j=i+1;j<data.triads.length;j++){
+      if(differAtMostOne(data.triads[i].pcs, data.triads[j].pcs)){
+        edges.push({ data:{ id:`T-${i}-${j}`, source:idFor(data.triads[i],i), target:idFor(data.triads[j],j)}});
+      }
+    }
+  }
+  // tetrads ↔ tetrads
+  for(let i=0;i<data.tetrads.length;i++){
+    for(let j=i+1;j<data.tetrads.length;j++){
+      if(differAtMostOne(data.tetrads[i].pcs, data.tetrads[j].pcs)){
+        edges.push({ data:{ id:`Q-${i}-${j}`, source:idFor(data.tetrads[i],i), target:idFor(data.tetrads[j],j)}});
+      }
+    }
+  }
+  return {nodes, edges};
+}
+
+/* ========= Painel único ========= */
+let lastData = null;
+let currentView = null; // 'table' | 'graph'
+const vizDock = document.getElementById('vizDock');
+const btnTableXls = document.getElementById('downloadTableBtn');
+const btnGraphSvg = document.getElementById('downloadGraphBtn');
+
+function resetPanel(msg){
+  vizDock.innerHTML = '';
+  const p = document.createElement('p');
+  p.className = 'muted';
+  vizDock.appendChild(p);
+  currentView = null;
+  btnTableXls.disabled = true;
+  btnGraphSvg.disabled = true;
+  cy = null;
+}
+
+function renderTableView(data, asNotes){
+  vizDock.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'tables';
+
+  const triGroups = groupByCategory(data.triads);
+  const tetGroups = groupByCategory(data.tetrads);
+
+  wrap.appendChild(makeTableBlock('Tríades encontradas', triGroups, asNotes));
+  wrap.appendChild(makeTableBlock('Tétrades encontradas', tetGroups, asNotes));
+  vizDock.appendChild(wrap);
+
+  currentView = 'table';
+  btnTableXls.disabled = false;
+  btnGraphSvg.disabled = true;
+}
+
+function renderGraphView(data){
+  vizDock.innerHTML = '';
+  const grafoWrap = document.createElement('div');
+  grafoWrap.className = 'grafo';
+
+  const legend = document.createElement('div');
+  legend.className = 'legend';
+  legend.innerHTML = `
+    <div class="item"><span class="swatch triad"></span><span>Tríades</span></div>
+    <div class="item"><span class="swatch tetrad"></span><span>Tétrades</span></div>`;
+  grafoWrap.appendChild(legend);
+
+  const graphDiv = document.createElement('div');
+  graphDiv.id = 'graph';
+  grafoWrap.appendChild(graphDiv);
+  vizDock.appendChild(grafoWrap);
+
+  const {nodes, edges} = buildGraphElements(data);
+
+  if (cy) { try{ cy.destroy(); }catch(e){} }
+  cy = cytoscape({
+    container: graphDiv,
+    elements: { nodes, edges },
+    style: [
+      { selector:'node',
+        style:{
+          'shape':'round-rectangle',
+          'label':'data(label)',
+          'text-wrap':'wrap','text-max-width':'140px',
+          'text-valign':'center','text-halign':'center',
+          'font-size':'11px','font-weight':'700',
+          'width':'label','height':'label','padding':'6px 8px',
+          'color':'#fff'
+        }
+      },
+      { selector:'node[kind = "triad"]',  style:{ 'background-color':'#000'     } },
+      { selector:'node[kind = "tetrad"]', style:{ 'background-color':'#FF6100'  } },
+      { selector:'edge', style:{ 'width':1.2, 'line-color':'#999' } }
+    ],
+    wheelSensitivity: 0.25
+  });
+
+  const layout = cy.layout({
+    name: 'fcose',
+    quality: 'proof',
+    randomize: true,
+    animate: false,
+    fit: true,
+    padding: 20,
+    nodeSeparation: 80,
+    nodeRepulsion: 6000,
+    idealEdgeLength: 130,
+    edgeElasticity: 0.15,
+    gravity: 0.75,
+    gravityRange: 3.8,
+    packComponents: true,
+    tile: true,
+    nodeDimensionsIncludeLabels: true
+  });
+  layout.run();
+  setTimeout(()=> cy.fit(undefined, 18), 0);
+
+  currentView = 'graph';
+  btnTableXls.disabled = true;
+  btnGraphSvg.disabled = false;
+}
+
+/* ========= Exportações ========= */
+function download(filename, data, mime){
+  const blob = new Blob([data], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function exportCurrentTableXLS(){
+  if (currentView !== 'table'){ alert('Gere a tabela primeiro.'); return; }
+
+  // pegue cada bloco de tabela renderizado
+  const blocks = vizDock.querySelectorAll('.table-block');
+  if (!blocks.length){ alert('Nenhuma tabela encontrada.'); return; }
+
+  // wrapper temporário para juntar tudo
+  const wrapper = document.createElement('div');
+
+  blocks.forEach((blk, i) => {
+    const titleText = blk.querySelector('h3')?.textContent || `Tabela ${i+1}`;
+
+    // título
+    const h = document.createElement('h3');
+    h.textContent = titleText;
+    wrapper.appendChild(h);
+
+    // tabela (clone para não mexer na original)
+    const table = blk.querySelector('table')?.cloneNode(true);
+    if (table) wrapper.appendChild(table);
+
+    wrapper.appendChild(document.createElement('br'));
+  });
+
+  // HTML mínimo (Excel entende), adiciona BOM para acentuação
+  const html = '<meta charset="utf-8">' + wrapper.innerHTML;
+  const blob = new Blob(['\ufeff', html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'tabelas.xls';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+
+// helper simples p/ títulos (se já tiver um, aproveite-o)
+function escapeHtml(s){
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+
+function exportGraphSVG(){
+  if(currentView !== 'graph' || !cy){ alert('Gere o grafo primeiro.'); return; }
+  if(!cy.svg){ alert('Extensão cytoscape-svg não carregou.'); return; }
+  const svg = cy.svg({ full: true, scale: 1, bg: '#ffffff' });
+  download('grafo_parcimonia.svg', svg, 'image/svg+xml;charset=utf-8');
+}
+
+/* ========= UI helpers ========= */
+function setButtons(asNotes){
+  const wrap = document.getElementById('pcButtons');
+  wrap.innerHTML = '';
+  for(let i=0;i<12;i++){
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = asNotes ? pcToSharp[i] : i;
+    b.addEventListener('click', ()=>{
+      const ip = document.getElementById('scaleInput');
+      const token = asNotes ? pcToSharp[i] : String(i);
+      ip.value = ip.value.trim() ? (ip.value.trim()+' '+token) : token;
+    });
+    wrap.appendChild(b);
+  }
+}
+
+/* ========= Eventos ========= */
+const notationSwitch = document.getElementById('notationSwitch');
+notationSwitch.addEventListener('change', ()=>{
+  setButtons(notationSwitch.checked);
+  // se a tabela estiver visível, re-render com a mesma escala na notação escolhida
+  if(currentView === 'table'){
+    const txt = document.getElementById('scaleInput').value.trim();
+    if(!txt) return;
+    try{
+      const scale = parseScale(txt);
+      lastData = chordsInScale(scale);
+      renderTableView(lastData, notationSwitch.checked);
+    }catch(e){}
+  }
+});
+
+document.getElementById('buildBtn').addEventListener('click', ()=>{
+  const txt = document.getElementById('scaleInput').value.trim();
+  if(!txt){ alert('Insira a escala (classe de notas).'); return; }
+  try{
+    const scale = parseScale(txt);
+    lastData = chordsInScale(scale);
+    renderTableView(lastData, notationSwitch.checked);
+  }catch(e){
+    alert(e.message || 'Entrada inválida.');
+  }
+});
+
+document.getElementById('graphBtn').addEventListener('click', ()=>{
+  const txt = document.getElementById('scaleInput').value.trim();
+  if(!txt){ alert('Insira a escala (classe de notas).'); return; }
+  try{
+    const scale = parseScale(txt);
+    lastData = chordsInScale(scale);
+    renderGraphView(lastData);
+  }catch(e){
+    alert(e.message || 'Entrada inválida.');
+  }
+});
+
+btnTableXls.addEventListener('click', exportCurrentTableXLS);
+btnGraphSvg.addEventListener('click', exportGraphSVG);
+
+document.getElementById('clearBtn').addEventListener('click', ()=>{
+  document.getElementById('scaleInput').value = '';
+  resetPanel('Nada renderizado ainda — clique em "Gerar Tabela" ou "Grafo de Parcimônia".');
+});
+
+/* boot */
+setButtons(false);
+resetPanel('Nada renderizado ainda — clique em "Gerar Tabela" ou "Grafo de Parcimônia".');
+</script>
+</body>
+</html>
