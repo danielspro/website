@@ -1,6 +1,0 @@
----
-title: "MusMat • Brazilian Journal of Music and Mathematics"
-subtitle: "Presentation"
----
-
-**MusMat • Brazilian Journal of Music and Mathematics**, ISSN 2526-3757, is an annual publication organized and edited by the MusMat Research Group and published by Graduate Program in Music of the Federal University of Rio de Janeiro (PPGM UFRJ). The journal brings together articles, interviews, reviews, scripts and theorems, musical scores, and news on the interaction between music and mathematics applied in musical analysis and composition. It is an open-access journal, published in English, exclusively online publication, and operating on a **rolling publication basis**, where articles are published as they are received.
