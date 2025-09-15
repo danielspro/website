@@ -1,0 +1,9 @@
+---
+pagetitle: "News | MusMat"
+toc: false
+listing:
+  contents: "news/*.qmd"
+  sort: "date desc"
+  type: default
+  categories: true
+---

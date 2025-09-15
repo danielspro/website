@@ -1,0 +1,84 @@
+project:
+  type: website
+
+website:
+  title: "MusMat Research Group"
+  favicon: icon.ico
+  navbar:
+    logo: logo.png
+    search: true
+    background: '#C53713'
+    foreground: secondary
+    tools:
+      - icon: youtube
+        href: https://www.youtube.com/c/musmat
+      - icon: instagram
+        href: https://www.instagram.com/musmat_ufrj
+      - icon: github
+        href: https://github.com/MusMatResearchGroup
+      - icon: broadcast-pin
+        href: https://podcasters.spotify.com/pod/show/musmat-podcast
+    left:
+      # - href: index.qmd
+        # text: Home
+      - href: news.qmd
+        text: News
+      - href: people.qmd
+        text: People
+      # - href: research.qmd
+        # text: Research
+      # - href: podcast.qmd
+        # text: Podcast
+      - text: Conferences
+        menu:
+          - href: 'conferences/2024/2024.qmd'
+            text: '2024'
+          - href: 'conferences/2022/2022.qmd'
+            text: '2022'
+          - href: 'conferences/2021/2021.qmd'
+            text: '2021'
+          - href: 'conferences/2020/2020.qmd'
+            text: '2020'
+          - href: 'conferences/2019/2019.qmd'
+            text: '2019'
+          - href: 'conferences/2018/2018.qmd'
+            text: '2018'
+          - href: 'conferences/2017/2017.qmd'
+            text: '2017'
+          - href: 'conferences/2016/2016.qmd'
+            text: '2016'
+      - text: Book Series
+        menu:
+          - href: 'series/vol-1.qmd'
+            text: 'Vol. 1 - Schoenberg: Music and Theory'
+      - href: journal/presentation.qmd
+        text: Journal
+      - href: contact.qmd
+        text: Contact
+
+  sidebar:
+    - title: "MusMat Journal"
+      contents:
+        - href: journal/presentation.qmd
+          text: Presentation
+        - href: journal/issues.qmd
+          text: Issues
+        - href: journal/editorial-board.qmd
+          text: Editorial board
+        - href: journal/guideline-authors.qmd
+          text: Guideline for authors
+        - href: journal/policies.qmd
+          text: Policies
+
+  page-footer: " CC BY-NC-ND 4.0 - MusMat Research Group"
+  google-analytics: G-35Z643HN3V
+  site-url: https://musmat.org/
+  repo-url: https://musmat.org/
+
+format:
+  html:
+    # link-external-icon: true
+    # link-external-newwindow: true
+    theme: simplex
+    css: styles.css
+    toc: true
