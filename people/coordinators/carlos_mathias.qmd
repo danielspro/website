@@ -1,0 +1,19 @@
+---
+title: "Carlos Mathias"
+subtitle: "Coordinator"
+image: carlos-mathias.jpg
+toc: false
+about:
+  id: person-profile
+  template: jolla
+  links:
+    - icon: file-earmark-text
+      text: vitae
+      href: http://lattes.cnpq.br/1708787934042772
+---
+
+:::{#person-profile}
+:::
+
+## Biography
+Carlos Mathias holds a Ph.D. in Mathematics from the Federal University of Rio de Janeiro, the same institution where he completed his master's degree in 1989. He is currently Associate Professor in the Department of Applied Mathematics (GMA) at the Fluminense Federal University. He previously taught at IME from 1990 to 1993 and at UFRRJ from 1994 to 2009. His research spans the fields of Mathematics Education and Pure Mathematics. He is the developer of DRUMMATH, a mathematics teaching methodology for visually impaired individuals that relies solely on sounds and motor activities. His expertise includes Large-Scale Assessments (Item Development, Pedagogical Interpretations, Framework Development, and Proficiency Scale Interpretation), as well as the History and Philosophy of Mathematics. He has worked as a trainer for item developers and reviewers (ENEM/SAEB/ENCCEJA) and has contributed to scale interpretation (SAEB/PROVA BRASIL, ENEM). He served as a Mathematics Supervisor for INEP/MEC's Pedagogical Feedback Platform. Additionally, he is an advisor and consultant for INEP/MEC, SEB/MEC, the Carlos Chagas Foundation (evaluating the quality of OBMEP exam questions and tests from 2016 to 2019), Fundação Cesgranrio, UNESCO, and the OECD (PISA for Schools coding). His specialization includes Analysis, Development, Review, and Pedagogical Interpretation of Items for Large-Scale Assessments (ENEM, Prova Brasil/SAEB, ENCCEJA, SARESP, SIADE), Mathematics Curriculum, Reference Matrices, and Proficiency Scale Development and Interpretation. In 2011, 2014, 2017, and 2021, he coordinated the national grading of open-ended questions for ENADE in the Mathematics Bachelor’s and Teaching Degree programs. In 2012, he was part of the team responsible for ENEM scale interpretation and development, as well as training Mathematics item developers for SAEB (5th grade and 3rd year of high school). He also created instructional videos on classical statistics and Item Response Theory (IRT) for INEP/MEC's Pedagogical Feedback Project. He is a member of the Discussion Group for the Reformulation of SAEB Mathematics Matrices and is also a researcher in the MusMat Group, focusing on music and mathematics. He coordinates the Humanist Mathematics Program (on Facebook, YouTube, Instagram, and Twitter), dedicated to promoting the Humanist Philosophy of Mathematics and its implications for teaching, learning, assessment, and curriculum development. Additionally, he has been a professional musician (drummer) certified by the Order of Musicians of Brazil (OMB) since 1993.

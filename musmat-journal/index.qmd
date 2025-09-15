@@ -1,0 +1,11 @@
+---
+title: "Redirecting..."
+format: html
+# execute: false
+---
+
+<script>
+    window.location.href = "../journal/presentation.html";
+</script>
+
+If you are not redirected, [click here](https://outro-site.com/destino).

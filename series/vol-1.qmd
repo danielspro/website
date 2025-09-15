@@ -1,0 +1,27 @@
+---
+title: "Schoenberg: Music and Theory"
+toc: false
+---
+
+![](vol-1-cover.jpg){width=70% fig-align="center"}
+
+**Editors**: Carlos Almada, Carlos Mathias, Cecília Saraiva, Daniel Moreira, Hugo Carvalho, and Liduino Pitombeira
+
+In 2021, the MusMat Research group promoted the 6th International Conference on Music and Mathematics honoring Arnold Schoenberg (1874- 1951). We had the presence of a significant number of world-renowned Brazilian and foreign researchers, invited to lecture on their most recent research associated with the theoretical and artistic work of this important composer. The conference was conducted entirely online, through video conferences, keynotes, virtual debates, and concerts.
+
+This book is a result of this conference, and its release coincides with the 150th anniversary of Schoenberg’s birth, joining a myriad of tribute initiatives honoring his legacy around the world. It presents a comprehensive prospection of Arnold Schoenberg’s music, paintings, as well as his theoretical writings. Thus, each chapter provides a unique perspective on different aspects of his extraordinary multifaceted work presented by a team of esteemed scholars and experts who delve deep into the intricacies of his groundbreaking contributions (theoretical and artistic). The book includes articles by **Robert Morris**, **Jack Boss**, **Luigi Verdi**, **Robert Peck**, **Marco Feitosa**, **Carlos Almada**, **Guilherme Bueno**, **Ernesto Hartmann**, **Severine Neff**, **Jeffrey Perry**, **Paulo Costa Lima**, and **Sabine Feisst**.
+
+Access the publication in PDF [here](Schoenberg-Music-and-Theory-MusMat-Series-1-2024.pdf).
+
+Purchase a printed copy on Amazon [here](https://www.amazon.com/dp/6501013720?ref_=pe_93986420_774957520).
+
+::: {.callout-note}
+The MusMat Research Group does not have any profit with the printed copy available on Amazon, and their price refers only to the printing and shipping costs.
+:::
+
+## Copyright
+This book is available under the license [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/), which "*enables reusers to copy and distribute the material in any medium or format in unadapted form only, for noncommercial purposes only, and only so long as attribution is given to the creator*". More specifically, CC BY-NC-ND includes the following elements:
+
+- **BY**: credit must be given to the creator (in this case, the MusMat Reserch Group and the authors of the chapters).
+- **NC**: Only noncommercial uses of the work are permitted.
+- **ND**: No derivatives or adaptations of the work are permitted.

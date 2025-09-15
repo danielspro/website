@@ -1,0 +1,22 @@
+---
+title: "Zé da Silva"
+subtitle: "Master Student"
+image: ze-da-silva.jpg
+started: "inicio"
+ended: "fim"
+toc: false
+about:
+  id: person-profile
+  template: jolla
+---
+
+:::{#person-profile}
+## Biography
+BIO
+
+## Project
+PROJECT
+
+## Supervisor
+SUPERVISOR
+:::

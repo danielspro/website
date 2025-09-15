@@ -1,0 +1,33 @@
+---
+title: "Hugo Carvalho"
+subtitle: "Coordinator"
+image: hugo-carvalho.jpg
+toc: false
+about:
+  id: person-profile
+  template: jolla
+  links:
+    - icon: link
+      text: website
+      href: https://hugocarvalho.mat.br/
+    - icon: file-earmark-text
+      text: vitae
+      href: http://lattes.cnpq.br/4007053253975343
+    - icon: github
+      text: github
+      href: https://github.com/HugoCarvalhoUFRJ
+---
+
+:::{#person-profile}
+:::
+
+## Biography
+Hugo Carvalho (1989, São Paulo) holds a Bachelor's and a Master's degree in Applied Mathematics (IM/UFRJ -- dissertation in Portuguese: [An Introduction to Singularities in General Relativity](http://objdig.ufrj.br/11/dissert/795029.pdf)) and a Ph.D. in Electrical Engineering (COPPE/UFRJ -- thesis in English: [Bayes Meets Bach: Applications of Bayesian Statistics to Audio Restoration](http://www.pee.ufrj.br/index.php/pt/producao-academica/teses-de-doutorado/2017-1/2016033153-bayes-meets-bach-applications-of-bayesian-statistics-to-audio-restoration/file)). He is currently a professor at the Department of Statistical Methods at UFRJ, a member of the MusMat research group, and a member of the editorial board of *MusMat • Brazilian Journal of Music and Mathematics*. He is, of course, passionate about music, has played the guitar since childhood, and has a deep appreciation for Latin American music. He is currently studying musical composition with Liduino Pitombeira and harmony with Alexandre Ferreira, Carlos Almada, and Daniel Moreira. His main research areas include the application of statistical models for the description and estimation of musical parameters and the use of Bayesian models for the restoration of degraded audio recordings. Together with Carlos Almada, Hugo coordinates the [MPB Project](https://projetompb.com.br/). In his free time, Hugo brews homemade beer with his beloved partner and creates watercolor paintings. He is also an avid enthusiast of science fiction (especially Star Trek) and J. R. R. Tolkien's *legendarium*.
+
+## Research
+* **Computationally Efficient Bayesian Methods in Audio Processing**
+  - This project aims to outline guidelines and establish objectives for my future research in the area of Statistical Signal Processing and Bayesian Inference, more specifically through the use of Bayesian methods for Audio Processing. In particular, it focuses on tasks such as: restoration of degraded signals, emotion recognition in music, and musical information retrieval, as well as developments in theoretical advancements in Statistics.
+* [MPB Project](https://projetompb.com.br/)
+  - The MPB Project aims to systematically define the contours of the aesthetic-musical context informally referred to as *Música Popular Brasileira*, more commonly known as MPB. More specifically, the approach adopted here is multidisciplinary, involving the creation of corpora of compositions representative of this aesthetic, followed by detailed statistical and musical analysis.
+* [ARME Project](https://arme-project.co.uk/)
+  - The ARME Project has the goal of understanding how musicians synchronise to each other and build a computational model that can reproduce the musician’s behaviour. This understanding will allow the creation of a music training tool where believable virtual musicians will play together with the user.

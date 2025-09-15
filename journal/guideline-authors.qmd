@@ -1,0 +1,16 @@
+---
+title: "MusMat • Brazilian Journal of Music and Mathematics"
+subtitle: "Guideline for authors"
+---
+
+Authors are invited to submit no more than two contributions electronically to the e-mail [musmatjournal@musmat.org](mailto:musmatjournal@musmat.org), for the following categories:
+
+* **PAPERS**: Peer-reviewed papers, minimum of 10 pages, written exclusively in English, submitted according to the [MusMat LaTeX Template](MusMat_template.zip). The MusMat Journal practices blind review and, therefore, authors should avoid identifying themselves, directly or indirectly. More information about LaTex is available [here](https://www.latex-project.org/). For bibliographical references we adopt a variation of the Chicago style, which guidelines you can find [here](MusMat-bibliography-style.pdf). Authors are responsible for securing permission for reprinting copyrighted material quoted or otherwise used in their work.
+
+* **REVIEWS**: Reviews (1500-3000 words) of a single book or paper related to the intersection between music and mathematic (sent in .doc or .docx format).
+
+* **MATHMUSIC**: Original (not yet published) compositions created using mathematical or computational concepts and/or procedures (in .musicxml along with a PDF), accompanied by program notes (500 words max.), and, if necessary, annotated examples from the score.
+
+* **SCRIPTS OR ALGORITHMS**: Original and innovative computational scripts, algorithms, or implemented software associated with a musical practical application. Any of them must be accompanied by a text (.doc, .docx, or .rtf) including: a) a full description of the object of study, b) a clear description of its functionalities, and c) examples, if it is the case, of its outputs. In the case of computational software, it must be freely available online.
+
+* **THEOREMS**: A new innovative theorem related to the intersection of music and mathematics along with its proof, or a refutation/a new original demonstration of a pre-existing theorem also related to music and mathematics (.doc, .docx, .rtf, or in the LaTeX template aforementioned). 

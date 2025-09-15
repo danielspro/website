@@ -1,0 +1,37 @@
+---
+title: "Liduino Pitombeira"
+subtitle: "Coordinator"
+image: liduino-pitombeira.jpeg
+toc: false
+about:
+  id: person-profile
+  template: jolla
+  links:
+    - icon: link
+      text: website
+      href: https://pitombeira.com
+    - icon: file-earmark-text
+      text: vitae
+      href: http://lattes.cnpq.br/2580064972508587
+    - icon: mortarboard
+      text: scholar
+      href: https://scholar.google.com/citations?user=dx8BjlQAAAAJ&hl=pt-BR
+    - icon: github
+      text: github
+      href: https://github.com/liduinopitombeira
+    - icon: youtube
+      text: music
+      href: https://www.youtube.com/@LiduinoPitombeiraMusic
+---
+
+:::{#person-profile}
+:::
+
+## Biography
+The music of Liduino Pitombeira (Brazil, 1962) has been performed by The Berlin Philharmonic Wind Quintet, Louisiana Sinfonietta, Poznan Philharmonic Orchestra (Poland), Orquestra Filarmônica do Espírito Santo, Orquestra Sinfônica da USP, Orquestra Sinfônica de Ribeirão Preto, Duo Barrenechea, The Alexander-Soares Duo,and Orquestra Sinfônica do Estado de São Paulo (Brazil). He has received many composition awards in Brazil and the USA, including the first prize in the 1998 Camargo Guarnieri Composition Competition and the first prize in the "Sinfonia dos 500 Anos" Composition Contest. He also received the 2003 MTNA-Shepherd Distinguished Composer of the Year Award for his piece "Brazilian Landscapes No.1". Three more pieces of his series Brazilian Landscapes (No.2,No.6 and No.9) were awarded first prizes in the USA. Dr. Pitombeira received his PhD in composition, with a minor in Theory, from the Louisiana State University (USA), where he studied with Dinos Constantinides and Jeffrey Perry. Pitombeira is professor of composition at the Escola de Música (School of Music) of the Universidade Federal do Rio de Janeiro (Federal University of Rio de Janeiro) - UFRJ, in Brazil. He has published articles on music composition and theory on several academic journals in Brazil and has also presented his researches on compositional theory (especially related to compositional systems and systemic modelling) and music theory in conferences in Brazil and abroad. Pitombeira is a member of MusMat, a research group, affiliated to the Program of Graduate Studies in Music of the Federal University of Rio de Janeiro, which aims to develop studies and computer modelling related to music and mathematics and their applications in the fields of composition and musical analysis. He is a member of the Academia Brasileira de Música (ABM), Associação de Pesquisa e Pós-Graduação em Música (ANPPOM), and Associação Brasileira de Teoria e Análise Musical (TeMA). His pieces are published by Peters, Bella Musica, Conners, Alry, RioArte, and Irmãos Vitale. Recordings of his works were made by Magni, Summit, Centaur, Antes, Filarmonika, and Bis labels. He is a member of the Brazilian Academy of Music, Chair No. 28.
+
+
+## Research
+**Planejamento composicional: reflexões teórico-estéticas no âmbito de uma produção artística formalizada** (*Compositional Planning: Theoretical-Aesthetic Reflections in the Context of a Formalized Artistic Production*)
+
+In this research project, we propose an expansion of previous projects conducted at the Graduate Program in Music of the Federal University of Rio de Janeiro (PPGM/UFRJ), which focused exclusively on the development of descriptive models (systemic modeling, 2015-2018 project) and the construction of prescriptive models (compositional systems, 2019-2022 project). In this new research, we aim to concentrate on Compositional Planning, which draws from a diverse range of paradigms (including interdisciplinarity), as a concept that interweaves textual and musical reflections and productions. This approach will extend the activities carried out in the two prior projects, which resulted in a significant output of bibliographic and compositional materials, laying the groundwork for the exploration we now propose.	

@@ -1,0 +1,33 @@
+---
+title: "Daniel Moreira"
+subtitle: "Coordinator"
+image: daniel-moreira.png
+toc: false
+about:
+  id: person-profile
+  template: jolla
+  links:
+    - icon: link
+      text: website
+      href: https://danielmoreira.mus.br
+    - icon: file-earmark-text
+      text: vitae
+      href: http://lattes.cnpq.br/3246457244246922
+    - icon: github
+      text: github
+      href: https://github.com/danielspro
+    - icon: youtube
+      text: music
+      href: https://www.youtube.com/@danielmoreira-mus
+---
+
+:::{#person-profile}
+:::
+
+## Biography
+Daniel Moreira holds a PhD and Master's degree in Creative Processes from the Federal University of Rio de Janeiro (UFRJ) and a Bachelor's degree in Music/Composition from the same institution. As a composer, his works have been performed at music festivals such as the Panorama of Brazilian Music, the Biennial of Contemporary Brazilian Music, the Villa-Lobos Festival, the National Meeting of University Composers (ENCUn), the Edino Krieger Festival of Brazilian Contemporary Music, among others. He received an Honorable Mention in the 1st National Composition Competition - Symphony Orchestra Category. His work "Fantasia for saxophone, trumpet, and percussion" was awarded at the Funarte Classical Composition Prize in 2012. His piece "YHWH" was selected in the composition competition of the II Edino Krieger Festival of Brazilian Contemporary Music. His works have been selected in several editions of the Panorama of Current Brazilian Music. He was an Adjunct Professor of Composition at UFRJ between 2014 and 2016, Adjunct Professor of Counterpoint at UFRJ (2021-2022), and Composition Professor at the Brazilian Conservatory of Music (2021-2022). He is currently a Full Professor of Music Language and Structuring at the Espírito Santo Music College (FAMES), a member of the MusMat research group (UFRJ), and a member of the editorial board of the MusMat Journal: Brazilian Journal of Music and Mathematics.
+
+## Research
+**Musical Texture as a Systematic Tool for Composition and Analysis**
+
+In this research project, we aim to continue the compositional research on texture initiated in my Doctoral thesis (*Textural Design: A compositional theory for the organization of musical texture*), in which I formulated what I call "textural design" - "[...] a pre-compositional methodology for organizing the various textural configurations of a piece in an abstract structure ready to be implemented as music. This concept is a translation (or adaptation) of Morris' compositional design into the realm of musical texture. Since Morris' proposal deals with distinct musical elements, some of his properties could not be fully applied, while other original possibilities were developed specifically for this research. For the formulation of textural design, the concept of textural space was developed, providing a series of codes that describe various musical textures. Each code differs from the others in its level of descriptive refinement. This research seeks to systematize new tools for manipulating and organizing texture, which can also be applied to the analysis of various works in the repertoire. This expansion is being developed both from original ideas specifically designed for musical texture and its unique characteristics, and through the adaptation of concepts from the poetics of musical creation related to different musical parameters. Additionally, this research aims to apply the tools developed in the realm of texture to other musical parameters, such as intervals, pitches, pitch classes, durations, etc. In this expansion of scope, the concept of Partition Space was created. This consists of a generalization of textural spaces to encompass any musical parameter that can be partitioned in some way. Finally, this research also seeks to develop computational tools to assist both the creative and analytical use of the developed tools and concepts.

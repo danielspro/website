@@ -1,0 +1,39 @@
+---
+title: "Vol. III, No. 2 - December 2019"
+subtitle: "MusMat • Brazilian Journal of Music and Mathematics"
+---
+
+## Full edition
+[Download here](../wp-content/uploads/2020/01/MusMat-Journal-VolIII-No.2.pdf)
+
+## Individual papers
+### An Overview of Scale Theory via Word Theory: Notes and Words, Commutativity and Non-Commutativity
+**David Clampitt**
+<p style="text-align: justify;"><strong>Abstract</strong>: About a decade ago, scale theory in music was invigorated by methods and results in the mathematical subfield of combinatorics on words. This paper reviews some of the insights stemming from this application. In particular, the interplay between notes and words is explored: the words of the theory capture musical intervals, but they conveniently “forget” the notes that constitute the intervals. For the purposes of mathematical music theory, this level of abstraction is usually convenient indeed, but reinstating the notes that give life to the musical interpretation in turn enriches the formal theory. Consideration of this dichotomy leads to the mathematical opposition of commutativity vs. non-commutativity, in terms of the relations between the non-abelian free group F2 and the additive abelian group Z2, and between the free non-commutative and commutative monoids embedded, respectively, in those groups.</p>
+<p style="text-align: left;"><strong>Keywords</strong>: <em> Christoffel words. Conjugation. Sturmian Morphisms. Well-formed Scales. </em></p>
+[Download paper](../wp-content/uploads/2019/12/05-Clampitt.pdfNK)
+
+### An Introduction to Markov Chains in Music Composition and Analysis
+**Hugo Tremonte de Carvalho**
+<p style="text-align: justify;"><strong>Abstract</strong>: Since the second half of the 20th. century, the use of probabilistic structures to compose and analyze music became even more popular, and nowadays, with the widespread and easiness of use of high-level structures such as neural networks due to very efficient and intuitive computational packages, the area of algorithmic composition became even more popular. This text is an expansion of a lecture named “A brief overview of algorithmic composition”, presented at the Music School of the Federal University of Rio de Janeiro in October 2019, and its main goal is to present a gentle and music-oriented introduction to Markov chains, a very intuitive and interpretable tool widely used in algorithmic composition.</p>
+<p style="text-align: left;"><strong>Keywords</strong>: <em> Markov chain. Algorithmic composition. Probability. Statistics. </em></p>
+[Download paper](../wp-content/uploads/2019/12/06-Carvalho.pdf)
+
+### Toward a Theory of Structuring Rhythm in Improvisation in Timeline-Based Musics
+**Stephen Paul Guerra**
+<p style="text-align: justify;"><strong>Abstract</strong>: Among high-level performers of Afro/diasporic musics, it is generally assumed that solo and timeline rhythmic structures relate in some meaningful way(s). Despite the substantial ethnographic and music-theoretic research that has been done with regard to Afro/diasporic timelines in the past sixty years, little work has explicitly attempted to define and demonstrate the would-be nature of such relationships. This article intends to stimulate a new research agenda that will close this gap between theoretical and practical knowledge. It posits four techniques (two transformational and two non-transformational) that allow one of Afro-Brazilian guitarist Baden Powell’s most rhythmically challenging recorded solos to be clearly and concisely understood as essentially six consecutive cycles of a samba timeline under various manipulations. Demonstrating the potential analytical and pedagogical economy that a theory of solo and timeline rhythmic structure relationships may underwrite, this article aims to inspire other authors to study the relationships of solo and timeline in the musics of their own specializations.</p>
+<p style="text-align: left;"><strong>Keywords</strong>: <em> Timeline. Samba. Improvisation. Baden Powell. Afro-disporic. </em></p>
+[Download paper](../wp-content/uploads/2019/12/07-Guerra.pdf)
+
+### PBACH and Musical Transformations
+**Carlos de Lemos Almada**
+<p style="text-align: justify;"><strong>Abstract</strong>: Departing from a specific passage of a text by Douglas Hofstadter which addresses recursive algorithmic application, this paper reformulates its basic structure, by using formal tools under a transformational-musical perspective. The last section of the study proposes some discussion about possible expansions and generalization from the obtained results.</p>
+<p style="text-align: left;"><strong>Keywords</strong>: <em> Recursion. Ordered Sets. Operations and Functions. Transformational Theory. </em></p>
+[Download paper](../wp-content/uploads/2019/12/08-Almada.pdf)
+
+### An Information Theory Based Analysis of Ligeti’s Musica Ricercata: Movements I and II
+**Adolfo Maia Jr. and Igor L. Maia**
+<p style="text-align: justify;"><strong>Abstract</strong>: In this work we present an analysis of Musica Ricercata I and II from the point of view of
+Information Theory and Complexity. We show that some patterns can be recognized and quantified using Information Theory methods such as Shannon Entropy and Statistical Correlation. In addition, we study some of Ligeti’s techniques of texture formation and their time evolution. The analysis of Movement I is more concentrated on rhythmic aspect whereas for the case of Movement II, we study phrase variations along time with their timbre variations, as well some slight modifications. For both movements a suitable alphabet of symbols and coding is introduced in order to get quantitative results for comparison and analysis. We also present some comments on the power and limitations of the approach of Information Theory for the analysis of scores. Some suggestions for further work and potential applications in music composition are also briefly discussed.</p>
+<p style="text-align: left;"><strong>Keywords</strong>: <em> György Ligeti. Musica Ricercata. Information Theory. Computer Music Analysis. </em></p>
+[Download paper](../wp-content/uploads/2020/01/09-MaiaJrMaia.pdf)

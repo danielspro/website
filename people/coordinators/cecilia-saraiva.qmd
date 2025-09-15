@@ -1,0 +1,22 @@
+---
+title: "Cecilia saraiva"
+subtitle: "Coordinator"
+image: cecilia_saraiva.jpg
+toc: false
+about:
+  id: person-profile
+  template: jolla
+  links:
+    - icon: file-earmark-text
+      text: vitae
+      href: http://lattes.cnpq.br/4820702492139261
+---
+
+:::{#person-profile}
+:::
+
+## Biography
+Cecilia Saraiva holds a Bachelor's and Master's degree in Non-commutative Algebra from the Institute of Mathematics at UFRJ, and a Ph.D. in Computing Systems from COPPE/UFRJ. She has worked as a substitute professor at UERJ and UFF, as well as at several private universities, including Gama Filho, Veiga de Almeida, and Estácio. After completing her Ph.D. in 2012, she also became an assistant professor at UERJ in Duque de Caxias (School of Education of Baixada Fluminense). Currently, she is a professor at the School of Mathematics at UNIRIO, conducting research on the relationships and applications between Algebra (with interests in group theory, topology, logic, and other languages) and Music. She is a member of the MusMat Research Group and serves on the editorial board of the MusMat Journal. Passionate about music since childhood, when she learned to sing by listening to her mother and her parents' Brazilian Popular Music and soul music records, she began her cello training in 2017 at the Niterói Music Conservatory (CMN), where she studied with professor and conductor Nerisa Aldrighi and had the opportunity to play in the CMN String Orchestra and Cello Ensemble. Currently, she plays cello in the Rio Camerata Orchestra (founded almost 40 years ago by maestro Israel Menezes and now conducted by maestro Alexandre Rocha). She loves to sing, from Renaissance music (she is a decent mezzo-soprano) to Brazilian Popular Music, pop music, and jazz standards. She is also an emerging composer.
+
+## Research
+Music and algebraic languages; music and logical-mathematical languages; music and topological languages.

@@ -1,0 +1,41 @@
+---
+title: "Vol. V, No. 2 - December 2021"
+subtitle: "MusMat • Brazilian Journal of Music and Mathematics"
+---
+
+## Full edition
+[Download here](../wp-content/uploads/2021/12/MusMat-Journal-V5N2_2021.pdf)
+
+## Individual papers
+### On First-Species Counterpoint Theory
+**Juan Sebastián Arias-Valero, Alberto Agustín-Aquino, and Emilio Lluis-Puebla**
+<p style="text-align: justify;"><strong>Abstract</strong>: We generalize first-species counterpoint theory to arbitrary rings and obtain some new counting and maximization results that enrich the theory of admitted successors, pointing to a structural approach, beyond computations. The generalization encompasses an alternative theory of contrapuntal intervals. We also propose several variations of the model that intend to deepen into its principles. The original motivations of the theory, as well as all technical passages, are carefully reviewed so as to provide a complete exposition.</p>
+<p style="text-align: left;"><strong>Keywords</strong>: <em> Counterpoint. Rings. Modules. Combinatorics. </em></p>
+[Download paper](../wp-content/uploads/2021/12/01-Valero-et-al-V5N2_2021.pdf)
+
+### Prime Decomposition Encoding: An Analytical Tool by the Use of Arithmetic Mapping of Drum-Set Timelines
+**Carlos Mathias and Carlos Almada**
+<p style="text-align: justify;"><strong>Abstract</strong>: This paper introduces an original proposal intended to encode timelines as univocal integers, by the use of arithmetic mapping, exploring inherent properties of prime numbers. A group of algorithms were developed in order to encode drum-set timelines (as well as to retrieve the original rhythms from the codes), either individually or taken together, forming grooves. Additional parameters (dynamic levels and timbre) are also included in the encoding process. Geometrical representation of the grooves, adopting terminology and methodology proposed by Gottfried Toussaint (2013), is also provided. Some practical application, addressing analysis and composition, are suggested at the last section of the study.</p>
+<p style="text-align: left;"><strong>Keywords</strong>: <em> Fundamental Theorem of Arithmetic. Prime encoding of rhythms. Drum-set timelines. Geometrical representation of rhythms. </em></p>
+[Download paper](../wp-content/uploads/2021/12/01-Mathias-Almada-V5N2_2021.pdf)
+
+### Feathered Beams
+**Paul Lombardi**
+<p style="text-align: justify;"><strong>Abstract</strong>: In music, durations are quantized to subdivisions of time in the form of fractions of the inverse powers of 2 (e.g., 1/20, 1/21, 1/22, etc.). All durations that are not involved in tuplets can be represented by sums of these fractions. The gradual transition from one note duration to another through a specified number of intermediate note values requires an accelerando/ritardando beam (i.e., feathered beam). This notation, however, does not indicate exactly how the gradual transition through the intermediate note values is to occur. The various details may be so contradictory that feathered beams may be impossible to realize. Thus, the notation is inherently indeterminate, although it is not often regarded as such. This paper examines these concepts and combines rhythmic nomenclature with a graphing system to deconstruct feathered beams using examples from George Crumb’s *Night Music I.*</p>
+<p style="text-align: left;"><strong>Keywords</strong>: <em> Feathered Beams. Accelerando/ritardando Beam. Duration. Rhythm. Graph. George Crumb. </em></p>
+[Download paper](../wp-content/uploads/2021/12/01-Lombardi-V5N2_2021.pdf)
+
+### Toward a Probabilistic Fourier Analysis on Audio Signals
+**Hugo Tremonte de Carvalho**
+<p style="text-align: justify;"><strong>Abstract</strong>: In audio signal processing there are several tools employed to perform time-frequency analysis, being the spectrogram one of the most widely used. In a nutshell, it can be understood as a visual representation of the frequency content of an audio signal as it varies with time. Here we propose a probabilistic alternative to the spectrogram, which can be roughly interpreted as the most likely frequency to be present within an audio signal, also along time. This will be achieved by computing a specific posterior distribution in a Bayesian context. Preliminary experiments indicating the suitability of this object are presented, and potential applications to audio signal processing are outlined.</p>
+<p style="text-align: left;"><strong>Keywords</strong>: <em> Audio Signal Processing. Statistical Signal Processing. Bayesian Inference. Fourier Analysis. Spectrogram. </em></p>
+[Download paper](../wp-content/uploads/2021/12/01-Carvalho-V5N2_2021.pdf)
+
+### Gestural Presheaves: From Yoneda to Sheaves
+**Juan Sebastián Arias-Valero and Emilio Lluis-Puebla**
+<p style="text-align: justify;"><strong>Abstract</strong>: We study gestural presheaves in the language of abstract gestures and, in particular, a general gestural version of the Yoneda embedding, based on a Mazzola’s idea, and gestural sheaves. We apply the latter to Mozart and Beethoven.</p>
+<p style="text-align: left;"><strong>Keywords</strong>: <em> Gestures. Melodic contour. Category theory. Yoneda lemma. Sheaves. </em></p>
+[Download paper](../wp-content/uploads/2021/12/01-Valero-Puebla-V5N2_2021.pdf)
+
+## Interview with Severine Neff
+[Download here](../wp-content/uploads/2021/12/02-Severine-Neff.pdf)

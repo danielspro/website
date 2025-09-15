@@ -1,0 +1,22 @@
+---
+title: "Carlos Almada"
+subtitle: "Coordinator"
+image: carlos-almada.jpeg
+toc: false
+about:
+  id: person-profile
+  template: jolla
+  links:
+    - icon: file-earmark-text
+      text: vitae
+      href: http://lattes.cnpq.br/2224575369930012
+    - icon: mortarboard
+      text: scholar
+      href: https://scholar.google.com/citations?user=Zj0rs0YAAAAJ&hl=pt-BR
+---
+
+:::{#person-profile}
+:::
+
+## Biography
+Carlos Almada is a composer, associate professor at the UFRJ School of Music and, since 2011, a permanent member of the Graduate Program in Music at the same institution. Master and PhD in Music from UNIRIO, with theoretical-analytical research regarding Schoenberg's First Chamber Symphony op.9. Researcher with participation in dozens of international national congresses and articles published in scientific journals, with his main research interests focused on musical variation and systematic studies in popular music. Author of the books Arranjo (2001), A Estrutura do Choro (2006), Harmonia Functional (2009), Contraponto em Música Popular (2013), Nas Fronteiras da Tonalidade (2016), A Harmonia de Jobim (2022), A Melody de Jobim (2023) and Musical Variation: Toward a Transformational Perspective (2023). He is a member of the Brazilian Association of Theory and Analysis TeMA, editor-in-chief of the journal MusMat: Brazilian Journal of Music and Mathematics, leader of the MusMat research group and coordinator (together with Hugo Carvalho) of the [MPB Project](https://projetompb.com.br/).

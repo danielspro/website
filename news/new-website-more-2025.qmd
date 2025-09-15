@@ -1,0 +1,25 @@
+---
+title: "MusMat in 2025: New Website, Updates, and More!"
+description: "MusMat starts 2025 with a new website, on-going OJS migration, and the second season of our podcast!"
+author: "MusMat Group"
+date: "2025-01-31"
+# image: conference.webp
+draft: false
+categories:
+  - news
+  - podcast
+  - journal
+  - website
+format:
+  html:
+    page-layout: full
+    toc: false
+---
+
+The MusMat Research Group kicks off 2025 with exciting news! Our website has a fresh new look, offering a smoother and more intuitive navigation experience. We've also added a search tool (the magnifying glass in the upper right corner) to help users easily find content on the page.
+
+If you have published a paper with us in *MusMat • Brazilian Journal of Music and Mathematics*, we have maintained the same URLs as the previous website. This means that even after the migration, links redirecting to articles, including DOIs, will continue to work perfectly.
+
+Finally, two last announcements: we are working on migrating the journal to the OJS platform, streamlining and professionalizing the submission, review, and publication processes; and the second season of the MusMat Podcast (in Portuguese) is now live! We are currently on a short break due to academic holidays, but new episodes will be coming soon. You can check out the new episodes on [our YouTube channel](https://www.youtube.com/@MusMat/videos) or on [Spotify](https://open.spotify.com/show/39BGsP5zoPjA2xFZU7aBqO).
+
+See you soon!
