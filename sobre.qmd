@@ -1,9 +1,19 @@
 ---
 title: "Sobre"
 description: "Biografia, formação e atuação profissional de Daniel Moreira."
+toc: false
 ---
 
-<p class="page-intro">Compositor, pesquisador, professor e gestor acadêmico, com atuação nas áreas de criação musical, teoria e análise, música para audiovisual e ensino superior.</p>
+<div class="about-hero">
+  <div class="about-copy">
+    <p class="section-kicker">SOBRE</p>
+    <h1>Criação, pesquisa e ensino em música.</h1>
+    <p class="page-intro">Compositor, pesquisador, professor e gestor acadêmico, com atuação nas áreas de criação musical, teoria e análise, música para audiovisual e ensino superior.</p>
+  </div>
+  <div class="about-photo-wrap">
+    <img class="about-photo" src="images/daniel-moreira-retrato.jpg" alt="Retrato profissional de Daniel Moreira">
+  </div>
+</div>
 
 ## Biografia
 
