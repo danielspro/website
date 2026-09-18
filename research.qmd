@@ -1,5 +1,45 @@
 ---
-title: "Research"
+title: "Pesquisa e publicações"
+description: "Pesquisa acadêmica, publicações, produção científica e atuação editorial."
 ---
 
-About this site
+<p class="page-intro">Minha pesquisa concentra-se especialmente em processos criativos, teoria e análise musical, com interesse nas relações entre estrutura, percepção, composição e tecnologia.</p>
+
+## Linhas de interesse
+
+<div class="content-grid-3">
+  <div class="content-card">
+    <h3>Processos criativos</h3>
+    <p>Investigação de procedimentos composicionais, modelos de criação e relações entre análise e prática artística.</p>
+  </div>
+  <div class="content-card">
+    <h3>Teoria e análise</h3>
+    <p>Estudos de harmonia, forma, teoria pós-tonal, textura e organização musical.</p>
+  </div>
+  <div class="content-card">
+    <h3>Música e tecnologia</h3>
+    <p>Interfaces entre criação musical, produção, sistemas interativos, audiovisual e ferramentas digitais.</p>
+  </div>
+</div>
+
+## Publicações
+
+Esta página será gradualmente preenchida com artigos, capítulos, anais, resumos expandidos e demais produções acadêmicas.
+
+### Atuação editorial e pareceres
+
+- Editor da Revista MusMat.
+- Parecerista de periódicos científicos.
+- Parecerista de projetos de iniciação científica.
+- Parecerista de editais culturais e projetos artísticos.
+
+## Produção acadêmica
+
+Em uma próxima versão, esta seção poderá incluir:
+
+- referência bibliográfica completa;
+- resumo;
+- DOI ou link externo;
+- PDF, quando disponível;
+- indicação de coautoria;
+- filtro por tipo e ano.
