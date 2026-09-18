@@ -1,35 +1,25 @@
 ---
-title: "Contact"
+title: "Contato"
+description: "Contato profissional de Daniel Moreira."
+toc: false
 ---
 
-```{=html}
-<form method="post" action="https://forms.un-static.com/forms/df5163205d96f0058ba3337e4453cd1c23dacd2e">
-  <div class="form-group row">
-    <label for="inputName" class="col-sm-2 col-form-label">Name</label>
-    <div class="col-sm-10">
-      <input type="text" class="form-control" id="inputName" placeholder="Please enter your name">
-    </div>
+<p class="page-intro">Para propostas de composição, colaboração artística, pesquisa, ensino, palestras, consultoria ou outros projetos profissionais.</p>
+
+<div class="content-grid-2">
+  <div class="content-card">
+    <h3>Contato profissional</h3>
+    <p>Você pode entrar em contato por e-mail ou pelas redes profissionais.</p>
+    <p><strong>E-mail:</strong> danielspro@hotmail.com</p>
+    <p><a href="mailto:danielspro@hotmail.com">Enviar e-mail →</a></p>
   </div>
-  <div class="form-group row">
-    <label for="inputEmail" class="col-sm-2 col-form-label">Email</label>
-    <div class="input-group col-sm-10">
-      <div class="input-group-prepend"><i class="input-group-text fa fa-envelope"></i></div>
-      <input type="email" class="form-control" id="inputEmail" placeholder="Email">
-    </div>
+  <div class="content-card">
+    <h3>GitHub</h3>
+    <p>Projetos de software, experimentos e ferramentas digitais.</p>
+    <p><a href="https://github.com/danielspro">github.com/danielspro →</a></p>
   </div>
-  <div class="form-group row">
-    <label for="inputMessage" class="col-sm-2 col-form-label">Message</label>
-    <div class="col-sm-10">
-      <textarea name="inputMessage" cols="40" rows="8" class="form-control"></textarea>
-    </div>
-  </div>
-  <div class="form-group row">
-    <div class="col-sm-10">
-      <button type="submit" class="btn btn-primary">Send</button>
-    </div>
-  </div>
-  <div class="text-center">
-    <p><small>(Powered by <a rel="nofollow" href="Un-static Forms">Un-static Forms</a>)</small></p>
-  </div>
-</form>
-```
+</div>
+
+## Formulário
+
+Para evitar depender de PHP, a versão definitiva poderá usar um serviço externo de formulário compatível com GitHub Pages.
