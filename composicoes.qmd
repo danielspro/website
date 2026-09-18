@@ -1,0 +1,60 @@
+---
+title: "Composições"
+description: "Portfólio de música de concerto, games e audiovisual."
+---
+
+<p class="page-intro">Uma seleção de trabalhos autorais em diferentes contextos, reunindo música de concerto, trilhas para games e produção musical para audiovisual.</p>
+
+## Games
+
+<div class="content-grid-3">
+  <div class="content-card">
+    <h3>Go To Hell</h3>
+    <p>Trilha de inspiração jazzística, com forte caráter rítmico e teatral.</p>
+    <p><strong>Atuação:</strong> composição musical.</p>
+  </div>
+  <div class="content-card">
+    <h3>Quacolé Tennis</h3>
+    <p>Criação dos temas <em>Seabed Court</em> e <em>Boss Court</em>, com linguagem curta, direta e voltada à identidade de cada situação de jogo.</p>
+    <p><strong>Atuação:</strong> composição musical.</p>
+  </div>
+  <div class="content-card">
+    <h3>Astro Out</h3>
+    <p>Projeto envolvendo música, efeitos sonoros e implementação de áudio interativo.</p>
+    <p><strong>Atuação:</strong> compositor, sound designer e technical audio designer.</p>
+  </div>
+</div>
+
+<div class="content-grid-3">
+  <div class="content-card">
+    <h3>Libertas</h3>
+    <p>Trilha de aventura épica com transições entre tensão, mistério, tutti orquestral e fechamento melancólico em loop.</p>
+  </div>
+  <div class="content-card">
+    <h3>Brave Us</h3>
+    <p>Música e efeitos sonoros para trailer.</p>
+  </div>
+  <div class="content-card">
+    <h3>Suma</h3>
+    <p>Sound design e implementação de áudio com FMOD.</p>
+  </div>
+</div>
+
+## Audiovisual
+
+<div class="content-grid-2">
+  <div class="content-card">
+    <h3>FastFood</h3>
+    <p>Trilha para animação com referências à linguagem musical de cartoons antigos.</p>
+  </div>
+  <div class="content-card">
+    <h3>Flavour Express</h3>
+    <p>Trilha instrumental inspirada em diferentes regiões brasileiras, acompanhada de criação de efeitos sonoros.</p>
+  </div>
+</div>
+
+## Música de concerto
+
+Esta seção será destinada a obras de concerto, partituras, gravações e notas de programa.
+
+> Em breve: catálogo completo de obras, instrumentação, duração, estreia e materiais para escuta ou leitura.
