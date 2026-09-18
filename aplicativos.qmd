@@ -1,0 +1,24 @@
+---
+title: "Aplicativos"
+description: "Ferramentas digitais e projetos de software relacionados à música."
+---
+
+<p class="page-intro">Projetos digitais voltados à música, educação, análise, produção e experimentação com tecnologia.</p>
+
+## Projetos
+
+<div class="content-grid-2">
+  <div class="content-card">
+    <h3>Processamento MIDI</h3>
+    <p>Projetos experimentais relacionados à manipulação, organização e processamento de dados MIDI.</p>
+    <p><a href="https://github.com/danielspro">Ver projetos no GitHub →</a></p>
+  </div>
+  <div class="content-card">
+    <h3>Novas ferramentas</h3>
+    <p>Espaço para reunir aplicativos web, protótipos e ferramentas musicais desenvolvidas ao longo do tempo.</p>
+  </div>
+</div>
+
+## Em desenvolvimento
+
+Esta página poderá receber aplicativos executáveis diretamente no navegador, sem depender do WordPress ou de servidor PHP.
