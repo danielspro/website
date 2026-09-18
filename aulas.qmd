@@ -1,0 +1,38 @@
+---
+title: "Aulas"
+description: "Aulas, materiais didáticos e conteúdos de formação musical."
+---
+
+<p class="page-intro">Conteúdos voltados ao ensino de teoria, harmonia, análise, composição e música aplicada, reunindo materiais de aula, vídeos e recursos complementares.</p>
+
+## Áreas de ensino
+
+<div class="content-grid-3">
+  <div class="content-card">
+    <h3>Harmonia</h3>
+    <p>Funções harmônicas, teoria por graus, condução de vozes, cromatismo e análise harmônica.</p>
+  </div>
+  <div class="content-card">
+    <h3>Análise musical</h3>
+    <p>Forma, motivo, textura, repertório tonal e pós-tonal e procedimentos analíticos.</p>
+  </div>
+  <div class="content-card">
+    <h3>Composição e arranjo</h3>
+    <p>Processos criativos, instrumentação, desenvolvimento de ideias e escrita para diferentes formações.</p>
+  </div>
+</div>
+
+## Vídeos e cursos
+
+Aqui poderão ser incorporadas aulas do YouTube, materiais do projeto **Maestria em Harmonia** e conteúdos do curso **Maestria Essencial**.
+
+## Materiais
+
+Em versões futuras, esta página poderá reunir:
+
+- PDFs e apostilas;
+- exercícios;
+- exemplos em partitura;
+- playlists;
+- links para cursos;
+- materiais complementares para alunos.
