@@ -1,9 +1,89 @@
 ---
-pagetitle: "MusMat Research Group"
-title: "Research Group on Music and Mathematics"
+pagetitle: "Daniel Moreira — Compositor, pesquisador e professor"
+title: false
 toc: false
+page-layout: full
+body-classes: home-page
 ---
 
-MusMat Research Group was founded in 2013 in the Graduate Program in Music of UFRJ, in order to develop research within the formalization of musical processes (compositional and analytical) using mathematical models. By the present time the group have participation of teachers, students and external members, accumulating an expressive number of publications, artistic and technical productions. The group has also participated in several conferences outside the country and today maintains intensive dialogue with national and international community interested in the interaction between music and mathematics.
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-copy">
+      <p class="eyebrow">COMPOSITOR · PESQUISADOR · PROFESSOR</p>
+      <h1>Daniel Moreira</h1>
+      <p class="hero-lead">Música, pesquisa e tecnologia em diálogo entre criação, análise e audiovisual.</p>
+      <p class="hero-text">Atuo entre a composição musical, a pesquisa acadêmica e o ensino, com trabalhos voltados à música de concerto, games, audiovisual, teoria e análise musical.</p>
+      <div class="hero-actions">
+        <a class="button button-primary" href="composicoes.html">Conheça meu trabalho</a>
+        <a class="button button-secondary" href="sobre.html">Sobre mim</a>
+      </div>
+    </div>
+    <div class="hero-portrait-wrap">
+      <img class="hero-portrait" src="https://avatars.githubusercontent.com/u/47749235?v=4" alt="Daniel Moreira">
+      <div class="portrait-note">Foto provisória — substituiremos pela imagem definitiva.</div>
+    </div>
+  </div>
+</section>
 
-![](logo.png){width=15% fig-align="center"}
+<section class="section-wrap">
+  <p class="section-kicker">ATUAÇÃO</p>
+  <h2>Entre criação, pesquisa e ensino</h2>
+  <div class="card-grid card-grid-4">
+    <article class="feature-card">
+      <span class="card-number">01</span>
+      <h3>Composição</h3>
+      <p>Música de concerto, trilhas para games e audiovisual, arranjo e criação musical aplicada.</p>
+      <a href="composicoes.html">Ver composições →</a>
+    </article>
+    <article class="feature-card">
+      <span class="card-number">02</span>
+      <h3>Pesquisa</h3>
+      <p>Processos criativos, teoria e análise musical, música e tecnologia e produção acadêmica.</p>
+      <a href="pesquisa.html">Pesquisa e publicações →</a>
+    </article>
+    <article class="feature-card">
+      <span class="card-number">03</span>
+      <h3>Ensino</h3>
+      <p>Harmonia, análise, composição, arranjo, teoria musical e música para audiovisual.</p>
+      <a href="aulas.html">Aulas e materiais →</a>
+    </article>
+    <article class="feature-card">
+      <span class="card-number">04</span>
+      <h3>Tecnologia</h3>
+      <p>Ferramentas digitais, áudio interativo, produção musical e projetos de software ligados à música.</p>
+      <a href="aplicativos.html">Ver aplicativos →</a>
+    </article>
+  </div>
+</section>
+
+<section class="section-wrap alt-section">
+  <p class="section-kicker">PORTFÓLIO</p>
+  <h2>Projetos em destaque</h2>
+  <div class="project-grid">
+    <article class="project-card">
+      <div class="project-tag">GAME</div>
+      <h3>Go To Hell</h3>
+      <p>Trilha de caráter jazzístico para game, explorando energia, humor e identidade musical.</p>
+    </article>
+    <article class="project-card">
+      <div class="project-tag">GAME · ÁUDIO INTERATIVO</div>
+      <h3>Astro Out</h3>
+      <p>Música, efeitos sonoros e implementação de áudio interativo com FMOD.</p>
+    </article>
+    <article class="project-card">
+      <div class="project-tag">GAME</div>
+      <h3>Quacolé Tennis</h3>
+      <p>Temas para diferentes contextos de jogo, incluindo <em>Seabed Court</em> e <em>Boss Court</em>.</p>
+    </article>
+  </div>
+  <p class="section-link"><a href="composicoes.html">Explorar o portfólio de composições →</a></p>
+</section>
+
+<section class="cta-band">
+  <div>
+    <p class="section-kicker">CONTATO</p>
+    <h2>Projetos, colaborações e convites</h2>
+    <p>Para propostas de composição, pesquisa, ensino, palestras ou colaboração artística.</p>
+  </div>
+  <a class="button button-light" href="contato.html">Entrar em contato</a>
+</section>

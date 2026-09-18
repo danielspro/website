@@ -1,0 +1,73 @@
+---
+title: "Sobre"
+description: "Biografia, formação e atuação profissional de Daniel Moreira."
+toc: false
+---
+
+<div class="about-hero">
+  <div class="about-copy">
+    <p class="section-kicker">SOBRE</p>
+    <h1>Criação, pesquisa e ensino em música.</h1>
+    <p class="page-intro">Compositor, pesquisador, professor e gestor acadêmico, com atuação nas áreas de criação musical, teoria e análise, música para audiovisual e ensino superior.</p>
+  </div>
+  <div class="about-photo-wrap">
+    <img class="about-photo" src="images/daniel-moreira-retrato.jpg" alt="Retrato profissional de Daniel Moreira">
+  </div>
+</div>
+
+## Biografia
+
+Daniel Moreira é Doutor e Mestre em Música, com pesquisa voltada aos processos criativos, além de possuir formação em Música para Audiovisual e Bacharelado em Guitarra Elétrica. Sua trajetória articula criação artística, pesquisa acadêmica, ensino e gestão.
+
+Atua como professor no ensino superior, especialmente nas áreas de harmonia, análise musical, composição, arranjo e teoria musical. Também desenvolve trabalhos como compositor e sound designer para games e audiovisual, com experiência em produção musical e áudio interativo.
+
+Ao longo de sua carreira, participou de festivais, congressos e eventos acadêmicos, publicou trabalhos científicos, integrou comissões científicas e atuou como parecerista de periódicos, projetos de pesquisa e editais culturais.
+
+## Formação
+
+<div class="timeline">
+  <div class="timeline-item">
+    <strong>Doutorado em Música</strong>
+    Processos Criativos — Universidade Federal do Rio de Janeiro (UFRJ)
+  </div>
+  <div class="timeline-item">
+    <strong>Mestrado em Música</strong>
+    Processos Criativos — Universidade Federal do Rio de Janeiro (UFRJ)
+  </div>
+  <div class="timeline-item">
+    <strong>Especialização em Música para Audiovisual</strong>
+    Formação voltada à composição e produção musical para cinema, games e mídias.
+  </div>
+  <div class="timeline-item">
+    <strong>Bacharelado em Música</strong>
+    Guitarra Elétrica — Conservatório Brasileiro de Música – Centro Universitário.
+  </div>
+</div>
+
+## Atuação profissional
+
+<div class="content-grid-3">
+  <div class="content-card">
+    <h3>Ensino</h3>
+    <p>Professor de harmonia, análise, composição e disciplinas ligadas à criação musical em cursos de graduação e pós-graduação.</p>
+  </div>
+  <div class="content-card">
+    <h3>Gestão acadêmica</h3>
+    <p>Experiência em coordenação acadêmica, planejamento curricular, acompanhamento de cursos e organização de atividades de ensino superior.</p>
+  </div>
+  <div class="content-card">
+    <h3>Criação musical</h3>
+    <p>Composição para música de concerto, games e audiovisual, além de atuação em produção musical, sound design e áudio interativo.</p>
+  </div>
+</div>
+
+## Áreas de interesse
+
+<span class="badge-soft">Composição</span>
+<span class="badge-soft">Processos criativos</span>
+<span class="badge-soft">Teoria e análise musical</span>
+<span class="badge-soft">Harmonia</span>
+<span class="badge-soft">Música para games</span>
+<span class="badge-soft">Audiovisual</span>
+<span class="badge-soft">Áudio interativo</span>
+<span class="badge-soft">Tecnologia musical</span>
